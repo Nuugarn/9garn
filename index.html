@@ -141,8 +141,8 @@ h1 {
 .toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  justify-content: flex-start;
+  gap: 32px;
   margin: 0 0 30px;
 }
 
@@ -156,14 +156,14 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  border: 1px solid #c9d9e7;
+  border: 1px solid #aec4d9;
   border-radius: 11px;
   padding: 10px 13px;
-  background: white;
+  background: #e9f1f9;
   color: #173653;
   cursor: pointer;
   font-weight: 700;
-  box-shadow: 0 3px 10px rgba(22, 63, 103, .04);
+  box-shadow: 0 3px 10px rgba(22, 63, 103, .06);
 }
 
 .category-select-button:hover {
@@ -230,11 +230,17 @@ h1 {
   font-size: 13px;
 }
 
+.date-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .month-select select {
-  border: 1px solid #c9d9e7;
+  border: 1px solid #aec4d9;
   border-radius: 10px;
   padding: 9px 12px;
-  background: white;
+  background: #e9f1f9;
   color: #0b1f3a;
 }
 
@@ -335,7 +341,12 @@ h1 {
   color: #203b58;
 }
 
-.detail-line.type {
+.detail-line.type.type-income {
+  color: #176b9d;
+  font-weight: 800;
+}
+
+.detail-line.type.type-expense {
   color: #b14f5f;
   font-weight: 800;
 }
@@ -439,6 +450,13 @@ h1 {
   text-decoration: underline;
 }
 
+.row-time {
+  color: #8397ac;
+  font-weight: 400;
+  font-size: 13px;
+  margin-left: 6px;
+}
+
 .table-date {
   color: #71869a;
   white-space: nowrap;
@@ -488,42 +506,6 @@ dialog::backdrop {
   color: #60758d;
 }
 
-.detail-type {
-  margin: 0 0 8px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .08em;
-  color: #315f8c;
-}
-
-.detail-title {
-  margin: 0 0 22px;
-  font-size: 28px;
-}
-
-.detail-amount {
-  font-size: 32px;
-  font-weight: 800;
-  margin-bottom: 22px;
-}
-
-.detail-grid {
-  display: grid;
-  gap: 12px;
-}
-
-.detail-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 11px 0;
-  border-bottom: 1px solid #e3edf5;
-}
-
-.detail-row span:first-child {
-  color: #827a70;
-}
-
 .image-dialog {
   width: min(800px, calc(100% - 28px));
   max-width: 800px;
@@ -546,100 +528,48 @@ dialog::backdrop {
 }
 
 
-html {
-  min-width: 1100px;
-}
-
+/* Desktop-first layout: on small screens the whole page keeps its desktop
+   width and scrolls horizontally, rather than reflowing to a mobile layout. */
+html,
 body {
   min-width: 1100px;
 }
 
-.page-shell {
-  width: min(1100px, calc(100vw - 48px));
-  min-width: 980px;
-  margin: 0 auto;
-}
-
-.transaction-table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.transaction-table {
-  min-width: 920px;
-}
-
-@media (max-width: 1100px) {
-  body {
-    overflow-x: auto;
-  }
-
-  .page-shell {
-    width: 980px;
-    min-width: 980px;
-    margin-left: 24px;
-    margin-right: 24px;
-  }
-
-  .summary-grid {
-    min-width: 980px;
-  }
-
-  .toolbar {
-    min-width: 980px;
-  }
-
-  .shelf {
-    min-width: 980px;
-  }
-}
-
-@media (max-width: 760px) {
-  .app {
-    width: min(100% - 22px, 620px);
-    padding-top: 28px;
-  }
-
-  .header {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .add-button {
-    width: 100%;
-    padding: 15px;
-  }
-
-  .summary {
-    grid-template-columns: 1fr;
-  }
-
-  .toolbar {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .month-select {
-    justify-content: space-between;
-  }
-
-  .month-select select {
-    flex: 1;
-  }
-
-  .transaction-table-wrap {
-    margin-left: -1px;
-    margin-right: -1px;
-  }
-
-  .transaction-table th,
-  .transaction-table td {
-    padding: 13px 12px;
-  }
-}
-
 
 .day-select-wrap select:disabled { opacity: .55; cursor: not-allowed; }
+
+.category-badge.expense-badge {
+  background: #fde8e8;
+  border-color: #f5bcbc;
+  color: #b4232f;
+}
+
+.state-message {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+  color: #60758d;
+  background: rgba(255,255,255,.6);
+  border: 1px solid #d5e2ee;
+}
+
+.state-message.error {
+  color: #b4232f;
+  background: #fdeeee;
+  border-color: #f5bcbc;
+}
+
+.retry-button {
+  margin-left: 10px;
+  border: 1px solid #f0b8b8;
+  border-radius: 8px;
+  padding: 6px 12px;
+  background: white;
+  color: #b4232f;
+  cursor: pointer;
+  font-weight: 700;
+}
   </style>
 </head>
 <body>
@@ -656,15 +586,15 @@ body {
     <section class="summary">
       <div class="balance-card">
         <span class="summary-label">เงินคงเหลือ</span>
-        <strong id="balance">฿6,850</strong>
+        <strong id="balance">฿0</strong>
       </div>
       <div class="summary-card income">
         <span class="summary-label">รายรับ</span>
-        <strong id="income">฿10,000</strong>
+        <strong id="income">฿0</strong>
       </div>
       <div class="summary-card expense">
         <span class="summary-label" id="expenseLabel">รายจ่าย</span>
-        <strong id="expense">฿3,150</strong>
+        <strong id="expense">฿0</strong>
       </div>
     </section>
 
@@ -677,24 +607,21 @@ body {
 
         <div class="category-menu" id="categoryMenu">
           <button class="category-option active" type="button" data-category="all">ทั้งหมด</button>
-          <button class="category-option" type="button" data-category="ค่าเดินทาง">ค่าเดินทาง</button>
-          <button class="category-option" type="button" data-category="ค่าที่พัก">ค่าที่พัก</button>
-          <button class="category-option" type="button" data-category="ค่าแรง">ค่าแรง</button>
-          <button class="category-option" type="button" data-category="ค่าอาหาร">ค่าอาหาร</button>
-          <button class="category-option" type="button" data-category="ค่าวัสดุ">ค่าวัสดุ</button>
-          <button class="category-option add-category" id="addCategoryButton" type="button">+ เพิ่มหมวดหมู่</button>
+          <div id="categoryOptionsDynamic"></div>
         </div>
       </div>
 
-      <label class="month-select">
-        <span>เดือน</span>
-        <select id="monthSelect"></select>
-      </label>
+      <div class="date-filter-group">
+        <label class="month-select">
+          <span>เดือน</span>
+          <select id="monthSelect"></select>
+        </label>
 
-      <label class="month-select">
-        <span>วันที่</span>
-        <select id="daySelect"></select>
-      </label>
+        <label class="month-select">
+          <span>วันที่</span>
+          <select id="daySelect"></select>
+        </label>
+      </div>
     </section>
 
     <section class="shelf">
@@ -717,31 +644,40 @@ body {
             </tr>
           </thead>
           <tbody id="shelf">
-            <!-- Rows are rendered by script.js -->
+            <!-- Rows are rendered by the script at the bottom of this file -->
           </tbody>
         </table>
+      </div>
+
+      <div id="loadingState" class="state-message" hidden>กำลังโหลดข้อมูล...</div>
+      <div id="errorState" class="state-message error" hidden>
+        โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง
+        <button id="retryButton" class="retry-button" type="button">ลองใหม่</button>
       </div>
     </section>
   </main>
 
-  <dialog id="detailDialog">
-    <button class="close" id="closeDialog" aria-label="ปิด">×</button>
-    <div id="detailContent"></div>
-  </dialog>
-
   <dialog id="imageDialog" class="image-dialog">
     <button class="close" id="closeImageDialog" aria-label="ปิด">×</button>
-    <img id="previewImage" src="" alt="ภาพประกอบรายการ">
+    <img id="previewImage" src="" alt="ภาพประกอบรายการ" referrerpolicy="no-referrer" loading="lazy">
     <p class="image-caption">ภาพประกอบจากแบบฟอร์ม</p>
   </dialog>
 
-  <script>const transactions = [
-  {id:1,date:"20 ก.พ. 2569",time:"14:49 น.",type:"expense",category:"ค่าเดินทาง",title:"ค่าน้ำมัน",amount:1500,detail:"เติมน้ำมันรถสำหรับเดินทาง",image:"https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1200&q=80"},
-  {id:2,date:"21 ก.พ. 2569",time:"09:10 น.",type:"income",category:"รายรับประจำ",title:"เงินเดือน",amount:10000,detail:"เงินเดือนเดือนกุมภาพันธ์",image:""},
-  {id:3,date:"20 ก.พ. 2569",time:"18:20 น.",type:"expense",category:"ค่าวัสดุ",title:"ซื้อของใช้",amount:850,detail:"ของใช้ประจำบ้าน",image:""},
-  {id:4,date:"18 ก.พ. 2569",time:"12:30 น.",type:"expense",category:"ค่าอาหาร",title:"ค่าอาหาร",amount:800,detail:"ค่าอาหารสำหรับครอบครัว",image:""},
-  {id:5,date:"17 ก.พ. 2569",time:"16:15 น.",type:"expense",category:"ค่าเดินทาง",title:"ค่าแท็กซี่",amount:1500,detail:"เดินทางไปทำธุระ",image:""}
-];
+  <script>
+/*
+  ====== ตั้งค่าการเชื่อมต่อ ======
+  แทนที่ URL ด้านล่างด้วย Web App URL ที่ได้จากการ Deploy Google Apps Script
+  (Deploy > New deployment > Web app > Execute as: Me > Who has access: Anyone)
+
+  SECRET_TOKEN ต้องตรงกับค่าที่ตั้งไว้ใน Code.gs (ตัวแปร SECRET_TOKEN)
+  ใช้กันบอท/คนแปลกหน้ายิง request เข้ามาเขียนข้อมูลมั่ว ๆ — ไม่ใช่ระบบความปลอดภัยระดับสูง
+  เหมาะกับระบบใช้ในบ้าน/ทีมเล็กเท่านั้น
+*/
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1sjPJMsU24E-DNbBNWcezr7LhGLc2kLM4KOGnc9pw9CpC_PWTIIcjl0B0MWNKdUrfDw/exec";
+const SECRET_TOKEN = "ganjooo123";
+
+let transactions = [];
+let categories = [];
 
 const shelf=document.querySelector("#shelf");
 const itemCount=document.querySelector("#itemCount");
@@ -750,11 +686,14 @@ const daySelect=document.querySelector("#daySelect");
 const categorySelectButton=document.querySelector("#categorySelectButton");
 const categoryMenu=document.querySelector("#categoryMenu");
 const selectedCategory=document.querySelector("#selectedCategory");
-const categoryOptions=document.querySelectorAll(".category-option[data-category]");
-const addCategoryButton=document.querySelector("#addCategoryButton");
+const categoryOptionsDynamic=document.querySelector("#categoryOptionsDynamic");
 const imageDialog=document.querySelector("#imageDialog");
 const previewImage=document.querySelector("#previewImage");
 const closeImageDialog=document.querySelector("#closeImageDialog");
+const loadingState=document.querySelector("#loadingState");
+const errorState=document.querySelector("#errorState");
+const retryButton=document.querySelector("#retryButton");
+const transactionTableWrap=document.querySelector(".transaction-table-wrap");
 
 const summaryValues={balance:0,income:0,expense:0,expenseCategory:"ทั้งหมด"};
 let selectedCategoryValue="all";
@@ -762,27 +701,46 @@ let selectedMonthValue="all";
 let selectedDayValue="all";
 let openId=null;
 
-const thaiMonths={"ม.ค.":0,"ก.พ.":1,"มี.ค.":2,"เม.ย.":3,"พ.ค.":4,"มิ.ย.":5,"ก.ค.":6,"ส.ค.":7,"ก.ย.":8,"ต.ค.":9,"พ.ย.":10,"ธ.ค.":11};
+const thaiMonthNames=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
 
-function parseThaiDate(text){
-  const m=text.match(/(\d{1,2})\s+([^\s]+)\s+(\d{4})/);
-  if(!m || thaiMonths[m[2]]===undefined) return null;
-  return {day:Number(m[1]),monthName:m[2],monthIndex:thaiMonths[m[2]],year:Number(m[3])};
+// อ่านค่า datetime แบบ ISO (เช่น "2026-02-20T14:49:00") กลับมาเป็นชิ้นส่วนวันที่
+// ที่ใช้งานง่าย (ปียังเป็น ค.ศ. ณ จุดนี้ ยังไม่แปลงเป็น พ.ศ.)
+function parseIsoDate(iso){
+  if(!iso) return null;
+  const [datePart,timePart=""]=String(iso).split("T");
+  const [y,m,d]=datePart.split("-").map(Number);
+  if(!y||!m||!d) return null;
+  return {
+    year:y,
+    monthIndex:m-1,
+    monthName:thaiMonthNames[m-1],
+    day:d,
+    time:timePart.slice(0,5) // "HH:MM"
+  };
+}
+// แปลงเป็นข้อความวันที่แบบไทย (พ.ศ.) สำหรับแสดงผลเท่านั้น
+function formatThaiDate(iso){
+  const d=parseIsoDate(iso);
+  if(!d) return "";
+  return `${d.day} ${d.monthName} ${d.year+543}`;
+}
+function formatThaiTime(iso){
+  const d=parseIsoDate(iso);
+  return d&&d.time ? `${d.time} น.` : "";
 }
 function monthKey(item){
-  const d=parseThaiDate(item.date); return d?`${d.year}-${String(d.monthIndex).padStart(2,"0")}`:"";
+  const d=parseIsoDate(item.datetime); return d?`${d.year}-${String(d.monthIndex).padStart(2,"0")}`:"";
 }
 function dayKey(item){
-  const d=parseThaiDate(item.date); return d?`${monthKey(item)}-${String(d.day).padStart(2,"0")}`:"";
+  const d=parseIsoDate(item.datetime); return d?`${monthKey(item)}-${String(d.day).padStart(2,"0")}`:"";
 }
 function monthLabel(key){
   if(key==="all") return "ทั้งหมด";
   const [y,m]=key.split("-").map(Number);
-  const name=Object.keys(thaiMonths).find(k=>thaiMonths[k]===m);
-  return `${name} ${y}`;
+  return `${thaiMonthNames[m]} ${y+543}`;
 }
 function money(v){
-  return new Intl.NumberFormat("th-TH",{style:"currency",currency:"THB",maximumFractionDigits:0}).format(v);
+  return new Intl.NumberFormat("th-TH",{style:"currency",currency:"THB",minimumFractionDigits:0,maximumFractionDigits:2}).format(v);
 }
 
 function populateMonthOptions(){
@@ -795,14 +753,27 @@ function populateMonthOptions(){
 function populateDayOptions(){
   const rows=transactions
     .filter(x=>selectedMonthValue==="all"||monthKey(x)===selectedMonthValue)
-    .map(x=>({key:dayKey(x),date:parseThaiDate(x.date)}))
+    .map(x=>({key:dayKey(x),date:parseIsoDate(x.datetime)}))
     .filter(x=>x.date)
     .sort((a,b)=>b.key.localeCompare(a.key));
   const seen=new Set(), unique=[];
   rows.forEach(x=>{if(!seen.has(x.key)){seen.add(x.key);unique.push(x);}});
-  daySelect.innerHTML=`<option value="all">ทั้งหมด</option>${unique.map(x=>`<option value="${x.key}">${x.date.day} ${x.date.monthName} ${x.date.year}</option>`).join("")}`;
+  daySelect.innerHTML=`<option value="all">ทั้งหมด</option>${unique.map(x=>`<option value="${x.key}">${x.date.day} ${x.date.monthName} ${x.date.year+543}</option>`).join("")}`;
   selectedDayValue="all";
   daySelect.value="all";
+}
+
+// สร้างรายการหมวดหมู่ในเมนูแบบ dynamic จาก categories ที่ดึงมาจาก Data source
+// (แทนที่การ hardcode ปุ่มไว้ตรงๆ ใน HTML)
+function renderCategoryMenu(){
+  categoryOptionsDynamic.innerHTML=categories.map(name=>
+    `<button class="category-option ${selectedCategoryValue===name?"active":""}" type="button" data-category="${name}">${name}</button>`
+  ).join("");
+  categoryOptionsDynamic.querySelectorAll(".category-option").forEach(o=>
+    o.addEventListener("click",()=>selectCategory(o.dataset.category))
+  );
+  document.querySelector('.category-option[data-category="all"]')
+    .classList.toggle("active",selectedCategoryValue==="all");
 }
 
 function dateFiltered(){
@@ -850,15 +821,15 @@ function calculateSummary(){
   let balanceData = data;
 
   if(selectedDayValue !== "all"){
-    const selectedDate = parseThaiDate(
-      transactions.find(x=>dayKey(x)===selectedDayValue)?.date || ""
+    const selectedDate = parseIsoDate(
+      transactions.find(x=>dayKey(x)===selectedDayValue)?.datetime || ""
     );
 
     if(selectedDate){
       const selectedMonth = selectedMonthValue;
 
       balanceData = transactions.filter(x=>{
-        const d=parseThaiDate(x.date);
+        const d=parseIsoDate(x.datetime);
         if(!d) return false;
 
         const sameMonth = monthKey(x) === selectedMonth;
@@ -889,7 +860,9 @@ function calculateSummary(){
       : `รายจ่าย <span class="summary-filter-label">(${selectedCategoryValue})</span>`;
 }
 function render(){
-  const visible=dateFiltered().filter(x=>selectedCategoryValue==="all"||x.category===selectedCategoryValue);
+  const visible=dateFiltered()
+    .filter(x=>selectedCategoryValue==="all"||x.category===selectedCategoryValue)
+    .sort((a,b)=>a.datetime.localeCompare(b.datetime));
   itemCount.textContent=`${visible.length} รายการ`;
   if(!visible.length){
     shelf.innerHTML=`<tr class="empty-row"><td colspan="4">ไม่มีรายการตามเดือน / วันที่ / หมวดหมู่ที่เลือก</td></tr>`;
@@ -899,19 +872,19 @@ function render(){
     const open=openId===item.id;
     return `
       <tr class="transaction-row ${open?"is-open":""}">
-        <td><span class="category-badge">${item.type==="income"?"รายรับ":"รายจ่าย"}</span></td>
-        <td><span class="table-date">${item.date}</span></td>
-        <td><button class="detail-button" data-id="${item.id}" type="button">${item.title}</button></td>
+        <td><span class="category-badge ${item.type==="expense" ? "expense-badge" : ""}">${item.type==="income"?"รายรับ":"รายจ่าย"}</span></td>
+        <td><span class="table-date">${formatThaiDate(item.datetime)}</span></td>
+        <td><button class="detail-button" data-id="${item.id}" type="button">${item.title} <span class="row-time">${formatThaiTime(item.datetime)}</span></button></td>
         <td><span class="table-amount ${item.type}">${item.type==="income"?"+":"-"} ${money(item.amount)}</span></td>
       </tr>
       ${open?`
       <tr class="detail-row-full"><td colspan="4"><div class="detail-panel">
-        <div class="detail-line type">${item.type==="income"?"รายรับ":"รายจ่าย"}</div>
+        <div class="detail-line type ${item.type==="income"?"type-income":"type-expense"}">${item.type==="income"?"รายรับ":"รายจ่าย"}</div>
         <div class="detail-line category-detail">${item.category}</div>
         <div class="detail-line title">${item.title}</div>
         <div class="detail-line description">${item.detail}</div>
-        <div class="detail-line date-time">${item.time} ${item.date}</div>
-        <div class="detail-line">${item.image?`<button class="image-trigger" type="button" data-image-id="${item.id}">ภาพประกอบ — กดเพื่อดูภาพ</button>`:`<span class="no-image">ไม่มีภาพประกอบ</span>`}</div>
+        <div class="detail-line date-time">${formatThaiTime(item.datetime)} ${formatThaiDate(item.datetime)}</div>
+        <div class="detail-line">${item.image?`<button class="image-trigger" type="button" data-image-id="${item.id}">ภาพประกอบ (สลิป) — กดเพื่อดูภาพ</button>`:`<span class="no-image">ไม่มีภาพประกอบ</span>`}</div>
       </div></td></tr>`:""}`;
   }).join("");
 
@@ -920,30 +893,94 @@ function render(){
   }));
   shelf.querySelectorAll(".image-trigger").forEach(b=>b.addEventListener("click",e=>{
     e.stopPropagation(); const item=transactions.find(x=>x.id===Number(b.dataset.imageId));
-    if(!item?.image)return; previewImage.src=item.image; previewImage.alt=`ภาพประกอบ: ${item.title}`; imageDialog.showModal();
+    if(!item?.image)return; previewImage.src=toEmbeddableDriveUrl(item.image); previewImage.alt=`ภาพประกอบ: ${item.title}`; imageDialog.showModal();
   }));
+}
+function toEmbeddableDriveUrl(url){
+  if(!url) return url;
+  const m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  const fileId = m ? m[1] : null;
+  if(!fileId) return url;
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
 }
 function refresh(){calculateSummary();render();}
 function selectCategory(v){
   selectedCategoryValue=v; openId=null;
   selectedCategory.textContent=v==="all"?"หมวดหมู่: ทั้งหมด":`หมวดหมู่: ${v}`;
-  categoryOptions.forEach(o=>o.classList.toggle("active",o.dataset.category===v));
+  renderCategoryMenu();
   categoryMenu.classList.remove("open"); categorySelectButton.setAttribute("aria-expanded","false"); refresh();
 }
 
 categorySelectButton.addEventListener("click",e=>{
   e.stopPropagation(); const open=categoryMenu.classList.toggle("open"); categorySelectButton.setAttribute("aria-expanded",String(open));
 });
-categoryOptions.forEach(o=>o.addEventListener("click",()=>selectCategory(o.dataset.category)));
-addCategoryButton.addEventListener("click",()=>alert("ในขั้นตอนถัดไป ปุ่มนี้สามารถเชื่อมกับระบบเพิ่มหมวดหมู่ได้."));
+document.querySelector('.category-option[data-category="all"]').addEventListener("click",()=>selectCategory("all"));
+
 monthSelect.addEventListener("change",()=>{selectedMonthValue=monthSelect.value;openId=null;populateDayOptions();refresh();});
 daySelect.addEventListener("change",()=>{selectedDayValue=daySelect.value;openId=null;refresh();});
 document.addEventListener("click",e=>{if(!document.querySelector("#categoryWidget").contains(e.target)){categoryMenu.classList.remove("open");categorySelectButton.setAttribute("aria-expanded","false");}});
 closeImageDialog.addEventListener("click",()=>{imageDialog.close();previewImage.src="";});
 imageDialog.addEventListener("click",e=>{if(e.target===imageDialog){imageDialog.close();previewImage.src="";}});
-document.querySelector("#addButton").addEventListener("click",()=>alert("หน้านี้จะเชื่อมไปยังหน้าแบบฟอร์มในขั้นตอนถัดไป"));
+document.querySelector("#addButton").addEventListener("click",()=>{window.location.href="form.html";});
 
-populateMonthOptions();
-refresh();  </script>
+// ส่ง POST ไปยัง Apps Script โดยใช้ text/plain เพื่อเลี่ยง CORS preflight
+// (Apps Script Web App ไม่รองรับ preflight request ของ Content-Type: application/json โดยตรง)
+async function postToBackend(payload){
+  const res=await fetch(APPS_SCRIPT_URL,{
+    method:"POST",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body:JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+function showLoading(){
+  loadingState.hidden=false;
+  errorState.hidden=true;
+  transactionTableWrap.style.display="none";
+}
+function showError(){
+  loadingState.hidden=true;
+  errorState.hidden=false;
+  transactionTableWrap.style.display="none";
+}
+function showData(){
+  loadingState.hidden=true;
+  errorState.hidden=true;
+  transactionTableWrap.style.display="";
+}
+
+async function loadData(){
+  showLoading();
+  try{
+    const res=await fetch(APPS_SCRIPT_URL);
+    if(!res.ok) throw new Error("network error");
+    const data=await res.json();
+
+    transactions=(data.transactions||[]).map(t=>({
+      id:Number(t.id),
+      datetime:t.datetime,
+      type:t.type,
+      category:t.category||"",
+      title:t.title,
+      detail:t.detail||"",
+      amount:Number(t.amount),
+      image:t.imageUrl||""
+    }));
+    categories=data.categories||[];
+
+    renderCategoryMenu();
+    populateMonthOptions();
+    refresh();
+    showData();
+  }catch(err){
+    showError();
+  }
+}
+
+retryButton.addEventListener("click",loadData);
+
+loadData();
+  </script>
 </body>
 </html>
