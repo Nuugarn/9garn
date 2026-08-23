@@ -545,6 +545,55 @@ dialog::backdrop {
   font-size: 13px;
 }
 
+
+html {
+  min-width: 1100px;
+}
+
+body {
+  min-width: 1100px;
+}
+
+.page-shell {
+  width: min(1100px, calc(100vw - 48px));
+  min-width: 980px;
+  margin: 0 auto;
+}
+
+.transaction-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.transaction-table {
+  min-width: 920px;
+}
+
+@media (max-width: 1100px) {
+  body {
+    overflow-x: auto;
+  }
+
+  .page-shell {
+    width: 980px;
+    min-width: 980px;
+    margin-left: 24px;
+    margin-right: 24px;
+  }
+
+  .summary-grid {
+    min-width: 980px;
+  }
+
+  .toolbar {
+    min-width: 980px;
+  }
+
+  .shelf {
+    min-width: 980px;
+  }
+}
+
 @media (max-width: 760px) {
   .app {
     width: min(100% - 22px, 620px);
@@ -589,6 +638,8 @@ dialog::backdrop {
   }
 }
 
+
+.day-select-wrap select:disabled { opacity: .55; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -637,9 +688,12 @@ dialog::backdrop {
 
       <label class="month-select">
         <span>เดือน</span>
-        <select id="monthSelect">
-          <option value="august">สิงหาคม 2026</option>
-        </select>
+        <select id="monthSelect"></select>
+      </label>
+
+      <label class="month-select">
+        <span>วันที่</span>
+        <select id="daySelect"></select>
       </label>
     </section>
 
@@ -682,297 +736,214 @@ dialog::backdrop {
   </dialog>
 
   <script>const transactions = [
-  {
-    id: 1,
-    date: "20 ก.พ. 2569",
-    time: "14:49 น.",
-    type: "expense",
-    category: "ค่าเดินทาง",
-    title: "ค่าน้ำมัน",
-    amount: 1500,
-    detail: "เติมน้ำมันรถสำหรับเดินทาง",
-    image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1200&q=80"
-  },
-  {
-    id: 2,
-    date: "21 ก.พ. 2569",
-    time: "09:10 น.",
-    type: "income",
-    category: "รายรับประจำ",
-    title: "เงินเดือน",
-    amount: 10000,
-    detail: "เงินเดือนเดือนกุมภาพันธ์",
-    image: ""
-  },
-  {
-    id: 3,
-    date: "20 ก.พ. 2569",
-    time: "18:20 น.",
-    type: "expense",
-    category: "ค่าวัสดุ",
-    title: "ซื้อของใช้",
-    amount: 850,
-    detail: "ของใช้ประจำบ้าน",
-    image: ""
-  },
-  {
-    id: 4,
-    date: "18 ก.พ. 2569",
-    time: "12:30 น.",
-    type: "expense",
-    category: "ค่าอาหาร",
-    title: "ค่าอาหาร",
-    amount: 800,
-    detail: "ค่าอาหารสำหรับครอบครัว",
-    image: ""
-  },
-  {
-    id: 5,
-    date: "17 ก.พ. 2569",
-    time: "16:15 น.",
-    type: "expense",
-    category: "ค่าเดินทาง",
-    title: "ค่าแท็กซี่",
-    amount: 1500,
-    detail: "เดินทางไปทำธุระ",
-    image: ""
-  }
+  {id:1,date:"20 ก.พ. 2569",time:"14:49 น.",type:"expense",category:"ค่าเดินทาง",title:"ค่าน้ำมัน",amount:1500,detail:"เติมน้ำมันรถสำหรับเดินทาง",image:"https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1200&q=80"},
+  {id:2,date:"21 ก.พ. 2569",time:"09:10 น.",type:"income",category:"รายรับประจำ",title:"เงินเดือน",amount:10000,detail:"เงินเดือนเดือนกุมภาพันธ์",image:""},
+  {id:3,date:"20 ก.พ. 2569",time:"18:20 น.",type:"expense",category:"ค่าวัสดุ",title:"ซื้อของใช้",amount:850,detail:"ของใช้ประจำบ้าน",image:""},
+  {id:4,date:"18 ก.พ. 2569",time:"12:30 น.",type:"expense",category:"ค่าอาหาร",title:"ค่าอาหาร",amount:800,detail:"ค่าอาหารสำหรับครอบครัว",image:""},
+  {id:5,date:"17 ก.พ. 2569",time:"16:15 น.",type:"expense",category:"ค่าเดินทาง",title:"ค่าแท็กซี่",amount:1500,detail:"เดินทางไปทำธุระ",image:""}
 ];
 
-const shelf = document.querySelector("#shelf");
-const itemCount = document.querySelector("#itemCount");
+const shelf=document.querySelector("#shelf");
+const itemCount=document.querySelector("#itemCount");
+const monthSelect=document.querySelector("#monthSelect");
+const daySelect=document.querySelector("#daySelect");
+const categorySelectButton=document.querySelector("#categorySelectButton");
+const categoryMenu=document.querySelector("#categoryMenu");
+const selectedCategory=document.querySelector("#selectedCategory");
+const categoryOptions=document.querySelectorAll(".category-option[data-category]");
+const addCategoryButton=document.querySelector("#addCategoryButton");
+const imageDialog=document.querySelector("#imageDialog");
+const previewImage=document.querySelector("#previewImage");
+const closeImageDialog=document.querySelector("#closeImageDialog");
 
-// Summary values are independent state/data.
-// Their DOM position can be rearranged later without changing calculations.
-const summaryValues = {
-  balance: 0,
-  income: 0,
-  expense: 0,
-  expenseCategory: "ทั้งหมด"
-};
+const summaryValues={balance:0,income:0,expense:0,expenseCategory:"ทั้งหมด"};
+let selectedCategoryValue="all";
+let selectedMonthValue="all";
+let selectedDayValue="all";
+let openId=null;
 
-const categorySelectButton = document.querySelector("#categorySelectButton");
-const categoryMenu = document.querySelector("#categoryMenu");
-const selectedCategory = document.querySelector("#selectedCategory");
-const categoryOptions = document.querySelectorAll(".category-option[data-category]");
-const addCategoryButton = document.querySelector("#addCategoryButton");
+const thaiMonths={"ม.ค.":0,"ก.พ.":1,"มี.ค.":2,"เม.ย.":3,"พ.ค.":4,"มิ.ย.":5,"ก.ค.":6,"ส.ค.":7,"ก.ย.":8,"ต.ค.":9,"พ.ย.":10,"ธ.ค.":11};
 
-const imageDialog = document.querySelector("#imageDialog");
-const previewImage = document.querySelector("#previewImage");
-const closeImageDialog = document.querySelector("#closeImageDialog");
-
-let selectedCategoryValue = "all";
-let openId = null;
-
-const money = (value) =>
-  new Intl.NumberFormat("th-TH", {
-    style: "currency",
-    currency: "THB",
-    maximumFractionDigits: 0
-  }).format(value);
-
-function calculateSummary(category = "all") {
-  // Income is ALWAYS calculated from all income records.
-  summaryValues.income = transactions
-    .filter(item => item.type === "income")
-    .reduce((sum, item) => sum + item.amount, 0);
-
-  // Expense follows the selected category.
-  summaryValues.expense = transactions
-    .filter(item =>
-      item.type === "expense" &&
-      (category === "all" || item.category === category)
-    )
-    .reduce((sum, item) => sum + item.amount, 0);
-
-  // Balance ALWAYS uses all income and all expenses, regardless of category selection.
-  const totalExpense = transactions
-    .filter(item => item.type === "expense")
-    .reduce((sum, item) => sum + item.amount, 0);
-
-  summaryValues.balance = summaryValues.income - totalExpense;
-  summaryValues.expenseCategory = category === "all" ? "ทั้งหมด" : category;
-
-  document.querySelector("#income").textContent = money(summaryValues.income);
-  document.querySelector("#expense").textContent = money(summaryValues.expense);
-  document.querySelector("#balance").textContent = money(summaryValues.balance);
-
-  const expenseLabel = document.querySelector("#expenseLabel");
-  expenseLabel.innerHTML =
-    category === "all"
-      ? "รายจ่าย"
-      : `รายจ่าย <span class="summary-filter-label">(${category})</span>`;
+function parseThaiDate(text){
+  const m=text.match(/(\d{1,2})\s+([^\s]+)\s+(\d{4})/);
+  if(!m || thaiMonths[m[2]]===undefined) return null;
+  return {day:Number(m[1]),monthName:m[2],monthIndex:thaiMonths[m[2]],year:Number(m[3])};
+}
+function monthKey(item){
+  const d=parseThaiDate(item.date); return d?`${d.year}-${String(d.monthIndex).padStart(2,"0")}`:"";
+}
+function dayKey(item){
+  const d=parseThaiDate(item.date); return d?`${monthKey(item)}-${String(d.day).padStart(2,"0")}`:"";
+}
+function monthLabel(key){
+  if(key==="all") return "ทั้งหมด";
+  const [y,m]=key.split("-").map(Number);
+  const name=Object.keys(thaiMonths).find(k=>thaiMonths[k]===m);
+  return `${name} ${y}`;
+}
+function money(v){
+  return new Intl.NumberFormat("th-TH",{style:"currency",currency:"THB",maximumFractionDigits:0}).format(v);
 }
 
-function render(category = "all") {
-  const visible = transactions.filter(item =>
-    category === "all" ? true : item.category === category
-  );
+function populateMonthOptions(){
+  const months=[...new Set(transactions.map(monthKey).filter(Boolean))].sort().reverse();
+  monthSelect.innerHTML=`<option value="all">ทั้งหมด</option>${months.map(k=>`<option value="${k}">${monthLabel(k)}</option>`).join("")}`;
+  selectedMonthValue=months[0]||"all";
+  monthSelect.value=selectedMonthValue;
+  populateDayOptions();
+}
+function populateDayOptions(){
+  const rows=transactions
+    .filter(x=>selectedMonthValue==="all"||monthKey(x)===selectedMonthValue)
+    .map(x=>({key:dayKey(x),date:parseThaiDate(x.date)}))
+    .filter(x=>x.date)
+    .sort((a,b)=>b.key.localeCompare(a.key));
+  const seen=new Set(), unique=[];
+  rows.forEach(x=>{if(!seen.has(x.key)){seen.add(x.key);unique.push(x);}});
+  daySelect.innerHTML=`<option value="all">ทั้งหมด</option>${unique.map(x=>`<option value="${x.key}">${x.date.day} ${x.date.monthName} ${x.date.year}</option>`).join("")}`;
+  selectedDayValue="all";
+  daySelect.value="all";
+}
 
-  itemCount.textContent = `${visible.length} รายการ`;
+function dateFiltered(){
+  return transactions.filter(x=>{
+    const mm=selectedMonthValue==="all"||monthKey(x)===selectedMonthValue;
+    const dd=selectedDayValue==="all"||dayKey(x)===selectedDayValue;
+    return mm&&dd;
+  });
+}
 
-  if (!visible.length) {
-    shelf.innerHTML = `
-      <tr class="empty-row">
-        <td colspan="4">ยังไม่มีรายการในหมวดนี้</td>
-      </tr>
-    `;
+function calculateSummary(){
+  const data=dateFiltered();
+
+  // รายรับของกล่องรายรับ: ตามเดือน/วันที่ที่เลือก
+  // (ไม่แยกตามหมวดหมู่)
+  summaryValues.income=data
+    .filter(x=>x.type==="income")
+    .reduce((s,x)=>s+x.amount,0);
+
+  // รายจ่ายของกล่องรายจ่าย: ตามเดือน/วันที่ + หมวดหมู่ที่เลือก
+  summaryValues.expense=data
+    .filter(x=>
+      x.type==="expense" &&
+      (selectedCategoryValue==="all" || x.category===selectedCategoryValue)
+    )
+    .reduce((s,x)=>s+x.amount,0);
+
+  /*
+    เงินคงเหลือ = ยอดสะสมตั้งแต่ต้นเดือนจนถึงวันที่เลือก
+
+    ตัวอย่าง:
+    วันที่ 5  รับ +10,000
+    วันที่ 7  จ่าย -2,000
+    วันที่ 8  จ่าย -2,000
+
+    เลือกวันที่ 7  -> 8,000
+    เลือกวันที่ 8  -> 6,000
+
+    สำคัญ:
+    - ไม่สนหมวดหมู่ที่เลือก
+    - ถ้าเลือก "ทั้งหมด" ในวันที่ จะใช้ข้อมูลทั้งเดือน
+    - ถ้าเลือกวันที่ จะรวมเฉพาะรายการในเดือนเดียวกันตั้งแต่วันที่ 1
+      ถึงวันที่เลือก
+  */
+  let balanceData = data;
+
+  if(selectedDayValue !== "all"){
+    const selectedDate = parseThaiDate(
+      transactions.find(x=>dayKey(x)===selectedDayValue)?.date || ""
+    );
+
+    if(selectedDate){
+      const selectedMonth = selectedMonthValue;
+
+      balanceData = transactions.filter(x=>{
+        const d=parseThaiDate(x.date);
+        if(!d) return false;
+
+        const sameMonth = monthKey(x) === selectedMonth;
+        const onOrBeforeSelectedDay = d.day <= selectedDate.day;
+
+        return sameMonth && onOrBeforeSelectedDay;
+      });
+    }
+  }
+
+  const balanceIncome=balanceData
+    .filter(x=>x.type==="income")
+    .reduce((s,x)=>s+x.amount,0);
+
+  const balanceExpense=balanceData
+    .filter(x=>x.type==="expense")
+    .reduce((s,x)=>s+x.amount,0);
+
+  summaryValues.balance=balanceIncome-balanceExpense;
+
+  document.querySelector("#income").textContent=money(summaryValues.income);
+  document.querySelector("#expense").textContent=money(summaryValues.expense);
+  document.querySelector("#balance").textContent=money(summaryValues.balance);
+
+  document.querySelector("#expenseLabel").innerHTML=
+    selectedCategoryValue==="all"
+      ? "รายจ่าย"
+      : `รายจ่าย <span class="summary-filter-label">(${selectedCategoryValue})</span>`;
+}
+function render(){
+  const visible=dateFiltered().filter(x=>selectedCategoryValue==="all"||x.category===selectedCategoryValue);
+  itemCount.textContent=`${visible.length} รายการ`;
+  if(!visible.length){
+    shelf.innerHTML=`<tr class="empty-row"><td colspan="4">ไม่มีรายการตามเดือน / วันที่ / หมวดหมู่ที่เลือก</td></tr>`;
     return;
   }
-
-  shelf.innerHTML = visible.map(item => {
-    const isOpen = openId === item.id;
-
+  shelf.innerHTML=visible.map(item=>{
+    const open=openId===item.id;
     return `
-      <tr class="transaction-row ${isOpen ? "is-open" : ""}">
-        <td>
-          <span class="category-badge">${item.type === "income" ? item.category : item.type === "expense" ? "รายจ่าย" : item.category}</span>
-        </td>
-        <td>
-          <span class="table-date">${item.date}</span>
-        </td>
-        <td>
-          <button class="detail-button" data-id="${item.id}" type="button">
-            ${item.title}
-          </button>
-        </td>
-        <td>
-          <span class="table-amount ${item.type}">
-            ${item.type === "income" ? "+" : "-"} ${money(item.amount)}
-          </span>
-        </td>
+      <tr class="transaction-row ${open?"is-open":""}">
+        <td><span class="category-badge">${item.type==="income"?"รายรับ":"รายจ่าย"}</span></td>
+        <td><span class="table-date">${item.date}</span></td>
+        <td><button class="detail-button" data-id="${item.id}" type="button">${item.title}</button></td>
+        <td><span class="table-amount ${item.type}">${item.type==="income"?"+":"-"} ${money(item.amount)}</span></td>
       </tr>
-
-      ${isOpen ? `
-        <tr class="detail-row-full">
-          <td colspan="4">
-            <div class="detail-panel">
-              <div class="detail-line type">
-                ${item.type === "income" ? "รายรับ" : "รายจ่าย"}
-              </div>
-
-              <div class="detail-line category-detail">
-                ${item.category}
-              </div>
-
-              <div class="detail-line title">
-                ${item.title}
-              </div>
-
-              <div class="detail-line description">
-                ${item.detail}
-              </div>
-
-              <div class="detail-line date-time">
-                ${item.time} ${item.date}
-              </div>
-
-              <div class="detail-line">
-                ${
-                  item.image
-                    ? `<button class="image-trigger" type="button" data-image-id="${item.id}">
-                         ภาพประกอบ — กดเพื่อดูภาพ
-                       </button>`
-                    : `<span class="no-image">ไม่มีภาพประกอบ</span>`
-                }
-              </div>
-            </div>
-          </td>
-        </tr>
-      ` : ""}
-    `;
+      ${open?`
+      <tr class="detail-row-full"><td colspan="4"><div class="detail-panel">
+        <div class="detail-line type">${item.type==="income"?"รายรับ":"รายจ่าย"}</div>
+        <div class="detail-line category-detail">${item.category}</div>
+        <div class="detail-line title">${item.title}</div>
+        <div class="detail-line description">${item.detail}</div>
+        <div class="detail-line date-time">${item.time} ${item.date}</div>
+        <div class="detail-line">${item.image?`<button class="image-trigger" type="button" data-image-id="${item.id}">ภาพประกอบ — กดเพื่อดูภาพ</button>`:`<span class="no-image">ไม่มีภาพประกอบ</span>`}</div>
+      </div></td></tr>`:""}`;
   }).join("");
 
-  shelf.querySelectorAll(".detail-button").forEach(button => {
-    button.addEventListener("click", () => {
-      const id = Number(button.dataset.id);
-      openId = openId === id ? null : id;
-      render(selectedCategoryValue);
-    });
-  });
-
-  shelf.querySelectorAll(".image-trigger").forEach(button => {
-    button.addEventListener("click", event => {
-      event.stopPropagation();
-
-      const item = transactions.find(
-        transaction => transaction.id === Number(button.dataset.imageId)
-      );
-
-      if (!item || !item.image) return;
-
-      previewImage.src = item.image;
-      previewImage.alt = `ภาพประกอบ: ${item.title}`;
-      imageDialog.showModal();
-    });
-  });
+  shelf.querySelectorAll(".detail-button").forEach(b=>b.addEventListener("click",()=>{
+    const id=Number(b.dataset.id); openId=openId===id?null:id; render();
+  }));
+  shelf.querySelectorAll(".image-trigger").forEach(b=>b.addEventListener("click",e=>{
+    e.stopPropagation(); const item=transactions.find(x=>x.id===Number(b.dataset.imageId));
+    if(!item?.image)return; previewImage.src=item.image; previewImage.alt=`ภาพประกอบ: ${item.title}`; imageDialog.showModal();
+  }));
+}
+function refresh(){calculateSummary();render();}
+function selectCategory(v){
+  selectedCategoryValue=v; openId=null;
+  selectedCategory.textContent=v==="all"?"หมวดหมู่: ทั้งหมด":`หมวดหมู่: ${v}`;
+  categoryOptions.forEach(o=>o.classList.toggle("active",o.dataset.category===v));
+  categoryMenu.classList.remove("open"); categorySelectButton.setAttribute("aria-expanded","false"); refresh();
 }
 
-function selectCategory(category) {
-  selectedCategoryValue = category;
-  openId = null;
-
-  const label = category === "all"
-    ? "หมวดหมู่: ทั้งหมด"
-    : `หมวดหมู่: ${category}`;
-
-  selectedCategory.textContent = label;
-
-  categoryOptions.forEach(option => {
-    option.classList.toggle(
-      "active",
-      option.dataset.category === category
-    );
-  });
-
-  categoryMenu.classList.remove("open");
-  categorySelectButton.setAttribute("aria-expanded", "false");
-
-  calculateSummary(category);
-  render(category);
-}
-
-categorySelectButton.addEventListener("click", event => {
-  event.stopPropagation();
-
-  const isOpen = categoryMenu.classList.toggle("open");
-  categorySelectButton.setAttribute("aria-expanded", String(isOpen));
+categorySelectButton.addEventListener("click",e=>{
+  e.stopPropagation(); const open=categoryMenu.classList.toggle("open"); categorySelectButton.setAttribute("aria-expanded",String(open));
 });
+categoryOptions.forEach(o=>o.addEventListener("click",()=>selectCategory(o.dataset.category)));
+addCategoryButton.addEventListener("click",()=>alert("ในขั้นตอนถัดไป ปุ่มนี้สามารถเชื่อมกับระบบเพิ่มหมวดหมู่ได้."));
+monthSelect.addEventListener("change",()=>{selectedMonthValue=monthSelect.value;openId=null;populateDayOptions();refresh();});
+daySelect.addEventListener("change",()=>{selectedDayValue=daySelect.value;openId=null;refresh();});
+document.addEventListener("click",e=>{if(!document.querySelector("#categoryWidget").contains(e.target)){categoryMenu.classList.remove("open");categorySelectButton.setAttribute("aria-expanded","false");}});
+closeImageDialog.addEventListener("click",()=>{imageDialog.close();previewImage.src="";});
+imageDialog.addEventListener("click",e=>{if(e.target===imageDialog){imageDialog.close();previewImage.src="";}});
+document.querySelector("#addButton").addEventListener("click",()=>alert("หน้านี้จะเชื่อมไปยังหน้าแบบฟอร์มในขั้นตอนถัดไป"));
 
-categoryOptions.forEach(option => {
-  option.addEventListener("click", () => {
-    selectCategory(option.dataset.category);
-  });
-});
-
-addCategoryButton.addEventListener("click", () => {
-  alert("ในขั้นตอนถัดไป ปุ่มนี้สามารถเชื่อมกับระบบเพิ่มหมวดหมู่ได้");
-});
-
-document.addEventListener("click", event => {
-  if (!document.querySelector("#categoryWidget").contains(event.target)) {
-    categoryMenu.classList.remove("open");
-    categorySelectButton.setAttribute("aria-expanded", "false");
-  }
-});
-
-closeImageDialog.addEventListener("click", () => {
-  imageDialog.close();
-  previewImage.src = "";
-});
-
-imageDialog.addEventListener("click", event => {
-  if (event.target === imageDialog) {
-    imageDialog.close();
-    previewImage.src = "";
-  }
-});
-
-document.querySelector("#addButton").addEventListener("click", () => {
-  alert("หน้านี้จะเชื่อมไปยังหน้าแบบฟอร์มในขั้นตอนถัดไป");
-});
-
-calculateSummary("all");
-render("all");  </script>
+populateMonthOptions();
+refresh();  </script>
 </body>
 </html>
