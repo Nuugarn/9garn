@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>รายรับ - รายจ่าย</title>
+  <style>
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  font-family: "Noto Sans Thai", "Tahoma", sans-serif;
+  color: #10233f;
+  background: #eef5fb;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(255,255,255,.85), transparent 32rem),
+    #eef5fb;
+}
+
+button, select {
+  font: inherit;
+}
+
+.app {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 42px 0 64px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  margin: 0 0 7px;
+  font-size: 11px;
+  letter-spacing: .16em;
+  font-weight: 700;
+  color: #315f8c;
+}
+
+h1, h2, p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 7px;
+  font-size: clamp(30px, 5vw, 46px);
+  letter-spacing: -.04em;
+}
+
+.subtitle {
+  margin-bottom: 0;
+  color: #60758d;
+}
+
+.add-button {
+  border: 0;
+  border-radius: 12px;
+  padding: 13px 18px;
+  background: #0b1f3a;
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+  box-shadow: 0 7px 18px rgba(35,31,25,.12);
+}
+
+.add-button:hover {
+  transform: translateY(-1px);
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.balance-card,
+.summary-card {
+  border: 1px solid #d3e0ec;
+  border-radius: 18px;
+  padding: 22px;
+  background: rgba(255,255,255,.72);
+}
+
+.balance-card {
+  background: #0b1f3a;
+  color: white;
+  border-color: #0b1f3a;
+}
+
+.balance-card span,
+.summary-card span {
+  display: block;
+  font-size: 13px;
+  color: #687f98;
+  margin-bottom: 9px;
+}
+
+.balance-card span {
+  color: #b8c9da;
+}
+
+.balance-card strong,
+.summary-card strong {
+  display: block;
+  font-size: clamp(24px, 4vw, 34px);
+  letter-spacing: -.03em;
+}
+
+.income strong {
+  color: #176b9d;
+}
+
+.expense strong {
+  color: #b14f5f;
+}
+
+.summary-label {
+  display: block;
+}
+
+.summary-filter-label {
+  font-size: 11px;
+  color: #71869a;
+  margin-left: 4px;
+  font-weight: 700;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 30px;
+}
+
+.category-widget {
+  position: relative;
+}
+
+.category-select-button {
+  min-width: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid #c9d9e7;
+  border-radius: 11px;
+  padding: 10px 13px;
+  background: white;
+  color: #173653;
+  cursor: pointer;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(22, 63, 103, .04);
+}
+
+.category-select-button:hover {
+  border-color: #8eabc2;
+}
+
+.category-chevron {
+  font-size: 12px;
+  color: #60758d;
+}
+
+.category-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 7px);
+  left: 0;
+  width: 230px;
+  display: none;
+  overflow: hidden;
+  border: 1px solid #c9d9e7;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 14px 35px rgba(22, 63, 103, .16);
+}
+
+.category-menu.open {
+  display: block;
+}
+
+.category-option {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #e5eef5;
+  padding: 11px 14px;
+  background: white;
+  color: #294e70;
+  text-align: left;
+  cursor: pointer;
+}
+
+.category-option:last-child {
+  border-bottom: 0;
+}
+
+.category-option:hover {
+  background: #eef6fb;
+}
+
+.category-option.active {
+  background: #e6f1f8;
+  color: #0b416c;
+  font-weight: 800;
+}
+
+.category-option.add-category {
+  color: #176b9d;
+}
+
+.month-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #766f66;
+  font-size: 13px;
+}
+
+.month-select select {
+  border: 1px solid #c9d9e7;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: white;
+  color: #0b1f3a;
+}
+
+.shelf {
+  position: relative;
+}
+
+.shelf-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.shelf-heading h2 {
+  margin: 0;
+  font-size: 23px;
+}
+
+.shelf-heading > span {
+  color: #6d8196;
+  font-size: 13px;
+}
+
+.transaction-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #d5e2ee;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(22, 63, 103, .06);
+}
+
+.transaction-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 680px;
+  table-layout: fixed;
+}
+
+.transaction-table th,
+.transaction-table td {
+  padding: 14px 16px;
+  border-right: 1px solid #dce8f2;
+  border-bottom: 1px solid #dce8f2;
+  vertical-align: middle;
+}
+
+.transaction-table th:last-child,
+.transaction-table td:last-child {
+  border-right: 0;
+}
+
+.transaction-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.transaction-table th {
+  background: #eaf3fa;
+  color: #294e70;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.transaction-table td {
+  color: #1d3553;
+  background: #fff;
+  font-size: 14px;
+}
+
+.transaction-table tbody tr.transaction-row:hover td {
+  background: #f5f9fc;
+}
+
+.transaction-row.is-open td {
+  background: #f5f9fc;
+}
+
+.detail-row-full td {
+  padding: 0;
+  background: #f7fbfe;
+  border-bottom: 1px solid #dce8f2;
+}
+
+.detail-panel {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 20px 24px 22px;
+  border-top: 1px solid #dce8f2;
+  animation: slideDown .2s ease-out;
+}
+
+.detail-line {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  color: #203b58;
+}
+
+.detail-line.type {
+  color: #b14f5f;
+  font-weight: 800;
+}
+
+.detail-line.category-detail {
+  color: #315f8c;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.detail-line.title {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.detail-line.description {
+  color: #405a74;
+  font-size: 15px;
+}
+
+.detail-line.date-time {
+  color: #6d8196;
+  font-size: 14px;
+}
+
+.image-trigger {
+  width: fit-content;
+  border: 1px solid #bfd2e2;
+  border-radius: 9px;
+  background: #eaf3fa;
+  color: #164f82;
+  padding: 9px 13px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.image-trigger:hover {
+  background: #dcecf8;
+}
+
+.no-image {
+  color: #7b8fa2;
+  font-size: 14px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.transaction-table th:nth-child(1),
+.transaction-table td:nth-child(1) {
+  width: 18%;
+}
+
+.transaction-table th:nth-child(2),
+.transaction-table td:nth-child(2) {
+  width: 17%;
+}
+
+.transaction-table th:nth-child(3),
+.transaction-table td:nth-child(3) {
+  width: 45%;
+}
+
+.transaction-table th:nth-child(4),
+.transaction-table td:nth-child(4) {
+  width: 20%;
+  text-align: right;
+}
+
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: #edf5fb;
+  color: #285a85;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.detail-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #164f82;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.detail-button:hover {
+  text-decoration: underline;
+}
+
+.table-date {
+  color: #71869a;
+  white-space: nowrap;
+}
+
+.table-amount {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.table-amount.income {
+  color: #176b9d;
+}
+
+.table-amount.expense {
+  color: #b14f5f;
+}
+
+.empty-row td {
+  padding: 44px 20px;
+  text-align: center !important;
+  color: #6c8298;
+}
+
+dialog {
+  width: min(430px, calc(100% - 28px));
+  border: 0;
+  border-radius: 20px;
+  padding: 28px;
+  color: #0b1f3a;
+  box-shadow: 0 24px 80px rgba(20,17,13,.25);
+}
+
+dialog::backdrop {
+  background: rgba(30,26,21,.4);
+  backdrop-filter: blur(3px);
+}
+
+.close {
+  position: absolute;
+  right: 14px;
+  top: 10px;
+  border: 0;
+  background: transparent;
+  font-size: 28px;
+  cursor: pointer;
+  color: #60758d;
+}
+
+.detail-type {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: #315f8c;
+}
+
+.detail-title {
+  margin: 0 0 22px;
+  font-size: 28px;
+}
+
+.detail-amount {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 22px;
+}
+
+.detail-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid #e3edf5;
+}
+
+.detail-row span:first-child {
+  color: #827a70;
+}
+
+.image-dialog {
+  width: min(800px, calc(100% - 28px));
+  max-width: 800px;
+  padding: 18px;
+}
+
+.image-dialog img {
+  display: block;
+  width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #eaf3fa;
+}
+
+.image-dialog .image-caption {
+  margin: 12px 0 0;
+  color: #60758d;
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .app {
+    width: min(100% - 22px, 620px);
+    padding-top: 28px;
+  }
+
+  .header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .add-button {
+    width: 100%;
+    padding: 15px;
+  }
+
+  .summary {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .month-select {
+    justify-content: space-between;
+  }
+
+  .month-select select {
+    flex: 1;
+  }
+
+  .transaction-table-wrap {
+    margin-left: -1px;
+    margin-right: -1px;
+  }
+
+  .transaction-table th,
+  .transaction-table td {
+    padding: 13px 12px;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <div>
+        <p class="eyebrow">HOUSE FINANCE</p>
+        <h1>รายรับ - รายจ่าย</h1>
+        <p class="subtitle">บันทึกและดูรายการเงินของบ้าน</p>
+      </div>
+      <button class="add-button" id="addButton">+ เพิ่มรายการ</button>
+    </header>
+
+    <section class="summary">
+      <div class="balance-card">
+        <span class="summary-label">เงินคงเหลือ</span>
+        <strong id="balance">฿6,850</strong>
+      </div>
+      <div class="summary-card income">
+        <span class="summary-label">รายรับ</span>
+        <strong id="income">฿10,000</strong>
+      </div>
+      <div class="summary-card expense">
+        <span class="summary-label" id="expenseLabel">รายจ่าย</span>
+        <strong id="expense">฿3,150</strong>
+      </div>
+    </section>
+
+    <section class="toolbar">
+      <div class="category-widget" id="categoryWidget">
+        <button class="category-select-button" id="categorySelectButton" type="button" aria-expanded="false">
+          <span id="selectedCategory">หมวดหมู่: ทั้งหมด</span>
+          <span class="category-chevron">▼</span>
+        </button>
+
+        <div class="category-menu" id="categoryMenu">
+          <button class="category-option active" type="button" data-category="all">ทั้งหมด</button>
+          <button class="category-option" type="button" data-category="ค่าเดินทาง">ค่าเดินทาง</button>
+          <button class="category-option" type="button" data-category="ค่าที่พัก">ค่าที่พัก</button>
+          <button class="category-option" type="button" data-category="ค่าแรง">ค่าแรง</button>
+          <button class="category-option" type="button" data-category="ค่าอาหาร">ค่าอาหาร</button>
+          <button class="category-option" type="button" data-category="ค่าวัสดุ">ค่าวัสดุ</button>
+          <button class="category-option add-category" id="addCategoryButton" type="button">+ เพิ่มหมวดหมู่</button>
+        </div>
+      </div>
+
+      <label class="month-select">
+        <span>เดือน</span>
+        <select id="monthSelect">
+          <option value="august">สิงหาคม 2026</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="shelf">
+      <div class="shelf-heading">
+        <div>
+          <p class="eyebrow">TRANSACTIONS</p>
+          <h2>สิงหาคม 2026</h2>
+        </div>
+        <span id="itemCount">4 รายการ</span>
+      </div>
+
+      <div class="transaction-table-wrap">
+        <table class="transaction-table">
+          <thead>
+            <tr>
+              <th>ประเภท</th>
+              <th>วันที่</th>
+              <th>รายละเอียด</th>
+              <th>จำนวนเงิน</th>
+            </tr>
+          </thead>
+          <tbody id="shelf">
+            <!-- Rows are rendered by script.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="detailDialog">
+    <button class="close" id="closeDialog" aria-label="ปิด">×</button>
+    <div id="detailContent"></div>
+  </dialog>
+
+  <dialog id="imageDialog" class="image-dialog">
+    <button class="close" id="closeImageDialog" aria-label="ปิด">×</button>
+    <img id="previewImage" src="" alt="ภาพประกอบรายการ">
+    <p class="image-caption">ภาพประกอบจากแบบฟอร์ม</p>
+  </dialog>
+
+  <script>const transactions = [
+  {
+    id: 1,
+    date: "20 ก.พ. 2569",
+    time: "14:49 น.",
+    type: "expense",
+    category: "ค่าเดินทาง",
+    title: "ค่าน้ำมัน",
+    amount: 1500,
+    detail: "เติมน้ำมันรถสำหรับเดินทาง",
+    image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1200&q=80"
+  },
+  {
+    id: 2,
+    date: "21 ก.พ. 2569",
+    time: "09:10 น.",
+    type: "income",
+    category: "รายรับประจำ",
+    title: "เงินเดือน",
+    amount: 10000,
+    detail: "เงินเดือนเดือนกุมภาพันธ์",
+    image: ""
+  },
+  {
+    id: 3,
+    date: "20 ก.พ. 2569",
+    time: "18:20 น.",
+    type: "expense",
+    category: "ค่าวัสดุ",
+    title: "ซื้อของใช้",
+    amount: 850,
+    detail: "ของใช้ประจำบ้าน",
+    image: ""
+  },
+  {
+    id: 4,
+    date: "18 ก.พ. 2569",
+    time: "12:30 น.",
+    type: "expense",
+    category: "ค่าอาหาร",
+    title: "ค่าอาหาร",
+    amount: 800,
+    detail: "ค่าอาหารสำหรับครอบครัว",
+    image: ""
+  },
+  {
+    id: 5,
+    date: "17 ก.พ. 2569",
+    time: "16:15 น.",
+    type: "expense",
+    category: "ค่าเดินทาง",
+    title: "ค่าแท็กซี่",
+    amount: 1500,
+    detail: "เดินทางไปทำธุระ",
+    image: ""
+  }
+];
+
+const shelf = document.querySelector("#shelf");
+const itemCount = document.querySelector("#itemCount");
+
+// Summary values are independent state/data.
+// Their DOM position can be rearranged later without changing calculations.
+const summaryValues = {
+  balance: 0,
+  income: 0,
+  expense: 0,
+  expenseCategory: "ทั้งหมด"
+};
+
+const categorySelectButton = document.querySelector("#categorySelectButton");
+const categoryMenu = document.querySelector("#categoryMenu");
+const selectedCategory = document.querySelector("#selectedCategory");
+const categoryOptions = document.querySelectorAll(".category-option[data-category]");
+const addCategoryButton = document.querySelector("#addCategoryButton");
+
+const imageDialog = document.querySelector("#imageDialog");
+const previewImage = document.querySelector("#previewImage");
+const closeImageDialog = document.querySelector("#closeImageDialog");
+
+let selectedCategoryValue = "all";
+let openId = null;
+
+const money = (value) =>
+  new Intl.NumberFormat("th-TH", {
+    style: "currency",
+    currency: "THB",
+    maximumFractionDigits: 0
+  }).format(value);
+
+function calculateSummary(category = "all") {
+  // Income is ALWAYS calculated from all income records.
+  summaryValues.income = transactions
+    .filter(item => item.type === "income")
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  // Expense follows the selected category.
+  summaryValues.expense = transactions
+    .filter(item =>
+      item.type === "expense" &&
+      (category === "all" || item.category === category)
+    )
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  // Balance ALWAYS uses all income and all expenses, regardless of category selection.
+  const totalExpense = transactions
+    .filter(item => item.type === "expense")
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  summaryValues.balance = summaryValues.income - totalExpense;
+  summaryValues.expenseCategory = category === "all" ? "ทั้งหมด" : category;
+
+  document.querySelector("#income").textContent = money(summaryValues.income);
+  document.querySelector("#expense").textContent = money(summaryValues.expense);
+  document.querySelector("#balance").textContent = money(summaryValues.balance);
+
+  const expenseLabel = document.querySelector("#expenseLabel");
+  expenseLabel.innerHTML =
+    category === "all"
+      ? "รายจ่าย"
+      : `รายจ่าย <span class="summary-filter-label">(${category})</span>`;
+}
+
+function render(category = "all") {
+  const visible = transactions.filter(item =>
+    category === "all" ? true : item.category === category
+  );
+
+  itemCount.textContent = `${visible.length} รายการ`;
+
+  if (!visible.length) {
+    shelf.innerHTML = `
+      <tr class="empty-row">
+        <td colspan="4">ยังไม่มีรายการในหมวดนี้</td>
+      </tr>
+    `;
+    return;
+  }
+
+  shelf.innerHTML = visible.map(item => {
+    const isOpen = openId === item.id;
+
+    return `
+      <tr class="transaction-row ${isOpen ? "is-open" : ""}">
+        <td>
+          <span class="category-badge">${item.type === "income" ? item.category : item.type === "expense" ? "รายจ่าย" : item.category}</span>
+        </td>
+        <td>
+          <span class="table-date">${item.date}</span>
+        </td>
+        <td>
+          <button class="detail-button" data-id="${item.id}" type="button">
+            ${item.title}
+          </button>
+        </td>
+        <td>
+          <span class="table-amount ${item.type}">
+            ${item.type === "income" ? "+" : "-"} ${money(item.amount)}
+          </span>
+        </td>
+      </tr>
+
+      ${isOpen ? `
+        <tr class="detail-row-full">
+          <td colspan="4">
+            <div class="detail-panel">
+              <div class="detail-line type">
+                ${item.type === "income" ? "รายรับ" : "รายจ่าย"}
+              </div>
+
+              <div class="detail-line category-detail">
+                ${item.category}
+              </div>
+
+              <div class="detail-line title">
+                ${item.title}
+              </div>
+
+              <div class="detail-line description">
+                ${item.detail}
+              </div>
+
+              <div class="detail-line date-time">
+                ${item.time} ${item.date}
+              </div>
+
+              <div class="detail-line">
+                ${
+                  item.image
+                    ? `<button class="image-trigger" type="button" data-image-id="${item.id}">
+                         ภาพประกอบ — กดเพื่อดูภาพ
+                       </button>`
+                    : `<span class="no-image">ไม่มีภาพประกอบ</span>`
+                }
+              </div>
+            </div>
+          </td>
+        </tr>
+      ` : ""}
+    `;
+  }).join("");
+
+  shelf.querySelectorAll(".detail-button").forEach(button => {
+    button.addEventListener("click", () => {
+      const id = Number(button.dataset.id);
+      openId = openId === id ? null : id;
+      render(selectedCategoryValue);
+    });
+  });
+
+  shelf.querySelectorAll(".image-trigger").forEach(button => {
+    button.addEventListener("click", event => {
+      event.stopPropagation();
+
+      const item = transactions.find(
+        transaction => transaction.id === Number(button.dataset.imageId)
+      );
+
+      if (!item || !item.image) return;
+
+      previewImage.src = item.image;
+      previewImage.alt = `ภาพประกอบ: ${item.title}`;
+      imageDialog.showModal();
+    });
+  });
+}
+
+function selectCategory(category) {
+  selectedCategoryValue = category;
+  openId = null;
+
+  const label = category === "all"
+    ? "หมวดหมู่: ทั้งหมด"
+    : `หมวดหมู่: ${category}`;
+
+  selectedCategory.textContent = label;
+
+  categoryOptions.forEach(option => {
+    option.classList.toggle(
+      "active",
+      option.dataset.category === category
+    );
+  });
+
+  categoryMenu.classList.remove("open");
+  categorySelectButton.setAttribute("aria-expanded", "false");
+
+  calculateSummary(category);
+  render(category);
+}
+
+categorySelectButton.addEventListener("click", event => {
+  event.stopPropagation();
+
+  const isOpen = categoryMenu.classList.toggle("open");
+  categorySelectButton.setAttribute("aria-expanded", String(isOpen));
+});
+
+categoryOptions.forEach(option => {
+  option.addEventListener("click", () => {
+    selectCategory(option.dataset.category);
+  });
+});
+
+addCategoryButton.addEventListener("click", () => {
+  alert("ในขั้นตอนถัดไป ปุ่มนี้สามารถเชื่อมกับระบบเพิ่มหมวดหมู่ได้");
+});
+
+document.addEventListener("click", event => {
+  if (!document.querySelector("#categoryWidget").contains(event.target)) {
+    categoryMenu.classList.remove("open");
+    categorySelectButton.setAttribute("aria-expanded", "false");
+  }
+});
+
+closeImageDialog.addEventListener("click", () => {
+  imageDialog.close();
+  previewImage.src = "";
+});
+
+imageDialog.addEventListener("click", event => {
+  if (event.target === imageDialog) {
+    imageDialog.close();
+    previewImage.src = "";
+  }
+});
+
+document.querySelector("#addButton").addEventListener("click", () => {
+  alert("หน้านี้จะเชื่อมไปยังหน้าแบบฟอร์มในขั้นตอนถัดไป");
+});
+
+calculateSummary("all");
+render("all");  </script>
+</body>
+</html>
