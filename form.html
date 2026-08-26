@@ -283,6 +283,17 @@ select#category:disabled {
         </div>
       </div>
 
+      <div class="field">
+        <label for="location">สถานที่</label>
+        <input type="text" id="location" name="location" list="locationSuggestions" placeholder="เช่น บ้าน, ร้าน, ที่ 2">
+        <datalist id="locationSuggestions">
+          <option value="บ้าน">
+          <option value="ร้าน">
+          <option value="ที่ 2">
+        </datalist>
+        <div class="field-error" id="locationError">กรุณากรอกสถานที่</div>
+      </div>
+
       <div class="field" id="categoryField">
         <label for="category">หมวดหมู่ <span class="hint">(ใช้กับรายจ่ายเท่านั้น)</span></label>
         <select id="category" name="category">
@@ -364,6 +375,7 @@ const categoryField=document.querySelector("#categoryField");
 const titleInput=document.querySelector("#title");
 const detailInput=document.querySelector("#detail");
 const amountInput=document.querySelector("#amount");
+const locationInput=document.querySelector("#location");
 const dateInput=document.querySelector("#date");
 const timeHour=document.querySelector("#timeHour");
 const timeMinute=document.querySelector("#timeMinute");
@@ -398,15 +410,26 @@ dateInput.addEventListener("change",updateDateThaiPreview);
   }
 })();
 
-// ตั้งค่าเริ่มต้นวันที่/เวลาเป็นตอนนี้ แต่ผู้ใช้แก้ย้อนหลังได้เสมอ (ไม่ล็อกช่วงวันที่)
+// ตั้งค่าเริ่มต้นวันที่/เวลาเป็นเวลาประเทศไทยโดยตรง
+// ใช้ Asia/Bangkok เพื่อไม่พึ่ง timezone ของอุปกรณ์ และไม่แปลง UTC ซ้ำ
+function getBangkokDateTimeParts(){
+  const parts=new Intl.DateTimeFormat("en-CA",{
+    timeZone:"Asia/Bangkok",
+    year:"numeric",month:"2-digit",day:"2-digit",
+    hour:"2-digit",minute:"2-digit",hour12:false
+  }).formatToParts(new Date());
+  const get=k=>parts.find(p=>p.type===k)?.value||"";
+  return {year:get("year"),month:get("month"),day:get("day"),hour:get("hour"),minute:get("minute")};
+}
+
 function setDefaultDateTime(){
-  const now=new Date();
-  const pad=n=>String(n).padStart(2,"0");
-  dateInput.value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
-  timeHour.value=pad(now.getHours());
-  timeMinute.value=pad(now.getMinutes());
+  const now=getBangkokDateTimeParts();
+  dateInput.value=`${now.year}-${now.month}-${now.day}`;
+  timeHour.value=now.hour;
+  timeMinute.value=now.minute;
   updateDateThaiPreview();
 }
+
 setDefaultDateTime();
 
 // โหลดหมวดหมู่จาก Data source เดียวกับหน้ารายการ เพื่อให้ตรงกันเสมอ
@@ -471,6 +494,11 @@ function validate(){
     document.querySelector("#categoryError").classList.add("show");
     valid=false;
   }
+  if(!locationInput.value.trim()){
+    document.querySelector("#locationError").classList.add("show");
+    valid=false;
+  }
+
   if(!titleInput.value.trim()){
     document.querySelector("#titleError").classList.add("show");
     valid=false;
@@ -503,6 +531,7 @@ form.addEventListener("submit",async(e)=>{
     token:SECRET_TOKEN,
     type:isIncome?"income":"expense",
     category:isIncome?"":categorySelect.value,
+    location:locationInput.value.trim(),
     title:titleInput.value.trim(),
     detail:detailInput.value.trim(),
     amount:Number(amountInput.value),
