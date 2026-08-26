@@ -146,6 +146,64 @@ h1 {
   margin: 0 0 30px;
 }
 
+.location-widget {
+  position: relative;
+}
+
+.location-select-button {
+  min-width: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid #aec4d9;
+  border-radius: 11px;
+  padding: 10px 13px;
+  background: #e9f1f9;
+  color: #173653;
+  cursor: pointer;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(22, 63, 103, .06);
+}
+
+.location-select-button:hover { border-color: #8eabc2; }
+
+.location-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 7px);
+  left: 0;
+  width: 230px;
+  display: none;
+  overflow: hidden;
+  border: 1px solid #c9d9e7;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 14px 35px rgba(22, 63, 103, .16);
+}
+
+.location-menu.open { display: block; }
+
+.location-option {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #e5eef5;
+  padding: 11px 14px;
+  background: white;
+  color: #294e70;
+  text-align: left;
+  cursor: pointer;
+}
+
+.location-option:last-child { border-bottom: 0; }
+.location-option:hover { background: #eef6fb; }
+
+.location-option.active {
+  background: #e6f1f8;
+  color: #0b416c;
+  font-weight: 800;
+}
+
 .category-widget {
   position: relative;
 }
@@ -599,6 +657,17 @@ body {
     </section>
 
     <section class="toolbar">
+      <div class="location-widget" id="locationWidget">
+        <button class="location-select-button" id="locationSelectButton" type="button" aria-expanded="false">
+          <span id="selectedLocation">สถานที่: ทั้งหมด</span>
+          <span class="category-chevron">▼</span>
+        </button>
+        <div class="location-menu" id="locationMenu">
+          <button class="location-option active" type="button" data-location="all">ทั้งหมด</button>
+          <div id="locationOptionsDynamic"></div>
+        </div>
+      </div>
+
       <div class="category-widget" id="categoryWidget">
         <button class="category-select-button" id="categorySelectButton" type="button" aria-expanded="false">
           <span id="selectedCategory">หมวดหมู่: ทั้งหมด</span>
@@ -678,11 +747,16 @@ const SECRET_TOKEN = "ganjooo123";
 
 let transactions = [];
 let categories = [];
+let locations = [];
 
 const shelf=document.querySelector("#shelf");
 const itemCount=document.querySelector("#itemCount");
 const monthSelect=document.querySelector("#monthSelect");
 const daySelect=document.querySelector("#daySelect");
+const locationSelectButton=document.querySelector("#locationSelectButton");
+const locationMenu=document.querySelector("#locationMenu");
+const selectedLocation=document.querySelector("#selectedLocation");
+const locationOptionsDynamic=document.querySelector("#locationOptionsDynamic");
 const categorySelectButton=document.querySelector("#categorySelectButton");
 const categoryMenu=document.querySelector("#categoryMenu");
 const selectedCategory=document.querySelector("#selectedCategory");
@@ -696,6 +770,7 @@ const retryButton=document.querySelector("#retryButton");
 const transactionTableWrap=document.querySelector(".transaction-table-wrap");
 
 const summaryValues={balance:0,income:0,expense:0,expenseCategory:"ทั้งหมด"};
+let selectedLocationValue="all";
 let selectedCategoryValue="all";
 let selectedMonthValue="all";
 let selectedDayValue="all";
@@ -752,6 +827,7 @@ function populateMonthOptions(){
 }
 function populateDayOptions(){
   const rows=transactions
+    .filter(x=>selectedLocationValue==="all"||x.location===selectedLocationValue)
     .filter(x=>selectedMonthValue==="all"||monthKey(x)===selectedMonthValue)
     .map(x=>({key:dayKey(x),date:parseIsoDate(x.datetime)}))
     .filter(x=>x.date)
@@ -761,6 +837,19 @@ function populateDayOptions(){
   daySelect.innerHTML=`<option value="all">ทั้งหมด</option>${unique.map(x=>`<option value="${x.key}">${x.date.day} ${x.date.monthName} ${x.date.year+543}</option>`).join("")}`;
   selectedDayValue="all";
   daySelect.value="all";
+}
+
+function renderLocationMenu(){
+  locationOptionsDynamic.innerHTML=locations.map(name=>
+    `<button class="location-option ${selectedLocationValue===name?"active":""}" type="button" data-location="${name}">${name}</button>`
+  ).join("");
+
+  locationOptionsDynamic.querySelectorAll(".location-option").forEach(o=>
+    o.addEventListener("click",()=>selectLocation(o.dataset.location))
+  );
+
+  document.querySelector('.location-option[data-location="all"]')
+    .classList.toggle("active",selectedLocationValue==="all");
 }
 
 // สร้างรายการหมวดหมู่ในเมนูแบบ dynamic จาก categories ที่ดึงมาจาก Data source
@@ -778,9 +867,10 @@ function renderCategoryMenu(){
 
 function dateFiltered(){
   return transactions.filter(x=>{
+    const loc=selectedLocationValue==="all"||x.location===selectedLocationValue;
     const mm=selectedMonthValue==="all"||monthKey(x)===selectedMonthValue;
     const dd=selectedDayValue==="all"||dayKey(x)===selectedDayValue;
-    return mm&&dd;
+    return loc&&mm&&dd;
   });
 }
 
@@ -818,7 +908,15 @@ function calculateSummary(){
     - ถ้าเลือกวันที่ จะรวมเฉพาะรายการในเดือนเดียวกันตั้งแต่วันที่ 1
       ถึงวันที่เลือก
   */
-  let balanceData = data;
+  // เงินคงเหลือใช้ขอบเขตสถานที่ + เดือน/วันที่
+  // แต่ไม่สนหมวดหมู่ เพื่อรักษากฎเดิมของระบบ
+  let balanceData = transactions.filter(x=>
+    selectedLocationValue==="all" || x.location===selectedLocationValue
+  );
+
+  if(selectedMonthValue !== "all"){
+    balanceData = balanceData.filter(x=>monthKey(x)===selectedMonthValue);
+  }
 
   if(selectedDayValue !== "all"){
     const selectedDate = parseIsoDate(
@@ -826,13 +924,11 @@ function calculateSummary(){
     );
 
     if(selectedDate){
-      const selectedMonth = selectedMonthValue;
-
-      balanceData = transactions.filter(x=>{
+      balanceData = balanceData.filter(x=>{
         const d=parseIsoDate(x.datetime);
         if(!d) return false;
 
-        const sameMonth = monthKey(x) === selectedMonth;
+        const sameMonth = monthKey(x) === selectedMonthValue;
         const onOrBeforeSelectedDay = d.day <= selectedDate.day;
 
         return sameMonth && onOrBeforeSelectedDay;
@@ -904,6 +1000,17 @@ function toEmbeddableDriveUrl(url){
   return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
 }
 function refresh(){calculateSummary();render();}
+function selectLocation(v){
+  selectedLocationValue=v;
+  openId=null;
+  selectedLocation.textContent=v==="all"?"สถานที่: ทั้งหมด":`สถานที่: ${v}`;
+  renderLocationMenu();
+  locationMenu.classList.remove("open");
+  locationSelectButton.setAttribute("aria-expanded","false");
+  populateDayOptions();
+  refresh();
+}
+
 function selectCategory(v){
   selectedCategoryValue=v; openId=null;
   selectedCategory.textContent=v==="all"?"หมวดหมู่: ทั้งหมด":`หมวดหมู่: ${v}`;
@@ -911,14 +1018,37 @@ function selectCategory(v){
   categoryMenu.classList.remove("open"); categorySelectButton.setAttribute("aria-expanded","false"); refresh();
 }
 
+locationSelectButton.addEventListener("click",e=>{
+  e.stopPropagation();
+  const open=locationMenu.classList.toggle("open");
+  categoryMenu.classList.remove("open");
+  categorySelectButton.setAttribute("aria-expanded","false");
+  locationSelectButton.setAttribute("aria-expanded",String(open));
+});
+
+document.querySelector('.location-option[data-location="all"]').addEventListener("click",()=>selectLocation("all"));
+
 categorySelectButton.addEventListener("click",e=>{
-  e.stopPropagation(); const open=categoryMenu.classList.toggle("open"); categorySelectButton.setAttribute("aria-expanded",String(open));
+  e.stopPropagation();
+  const open=categoryMenu.classList.toggle("open");
+  locationMenu.classList.remove("open");
+  locationSelectButton.setAttribute("aria-expanded","false");
+  categorySelectButton.setAttribute("aria-expanded",String(open));
 });
 document.querySelector('.category-option[data-category="all"]').addEventListener("click",()=>selectCategory("all"));
 
 monthSelect.addEventListener("change",()=>{selectedMonthValue=monthSelect.value;openId=null;populateDayOptions();refresh();});
 daySelect.addEventListener("change",()=>{selectedDayValue=daySelect.value;openId=null;refresh();});
-document.addEventListener("click",e=>{if(!document.querySelector("#categoryWidget").contains(e.target)){categoryMenu.classList.remove("open");categorySelectButton.setAttribute("aria-expanded","false");}});
+document.addEventListener("click",e=>{
+  if(!document.querySelector("#categoryWidget").contains(e.target)){
+    categoryMenu.classList.remove("open");
+    categorySelectButton.setAttribute("aria-expanded","false");
+  }
+  if(!document.querySelector("#locationWidget").contains(e.target)){
+    locationMenu.classList.remove("open");
+    locationSelectButton.setAttribute("aria-expanded","false");
+  }
+});
 closeImageDialog.addEventListener("click",()=>{imageDialog.close();previewImage.src="";});
 imageDialog.addEventListener("click",e=>{if(e.target===imageDialog){imageDialog.close();previewImage.src="";}});
 document.querySelector("#addButton").addEventListener("click",()=>{window.location.href="form.html";});
@@ -960,6 +1090,7 @@ async function loadData(){
     transactions=(data.transactions||[]).map(t=>({
       id:Number(t.id),
       datetime:t.datetime,
+      location:t.location||"",
       type:t.type,
       category:t.category||"",
       title:t.title,
@@ -968,7 +1099,11 @@ async function loadData(){
       image:t.imageUrl||""
     }));
     categories=data.categories||[];
+    locations=[...new Set(
+      transactions.map(t=>String(t.location||"").trim()).filter(Boolean)
+    )].sort((a,b)=>a.localeCompare(b,"th"));
 
+    renderLocationMenu();
     renderCategoryMenu();
     populateMonthOptions();
     refresh();
