@@ -602,6 +602,88 @@ body {
   color: #b4232f;
 }
 
+.houses-container {
+  display: grid;
+  gap: 26px;
+}
+
+.house-panel {
+  border: 1px solid #d3e0ec;
+  border-radius: 20px;
+  background: rgba(255,255,255,.72);
+  overflow: hidden;
+}
+
+.house-panel-header {
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid #dce7f0;
+}
+
+.house-panel-title {
+  margin: 0 0 4px;
+  font-size: 24px;
+  color: #0b1f3a;
+}
+
+.house-panel-subtitle {
+  margin: 0;
+  color: #71869a;
+  font-size: 13px;
+}
+
+.house-summary {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 10px;
+  padding: 14px 16px 0;
+}
+
+.house-summary-card {
+  border: 1px solid #d3e0ec;
+  border-radius: 13px;
+  padding: 13px 15px;
+  background: white;
+}
+
+.house-summary-card.balance {
+  background: #0b1f3a;
+  color: white;
+  border-color: #0b1f3a;
+}
+
+.house-summary-card span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 11px;
+  color: #71869a;
+}
+
+.house-summary-card.balance span { color: #b8c9da; }
+
+.house-summary-card strong {
+  display: block;
+  font-size: 21px;
+}
+
+.house-summary-card.income strong { color: #176b9d; }
+.house-summary-card.expense strong { color: #b14f5f; }
+
+.house-table-wrap {
+  margin-top: 14px;
+  border-top: 1px solid #dce7f0;
+}
+
+.house-panel .transaction-table {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.house-empty {
+  padding: 36px 20px;
+  text-align: center;
+  color: #6c8298;
+}
+
 .state-message {
   margin-top: 14px;
   padding: 16px;
@@ -643,7 +725,7 @@ body {
 
     <section class="summary">
       <div class="balance-card">
-        <span class="summary-label">เงินคงเหลือ</span>
+        <span class="summary-label" id="balanceLabel">เงินคงเหลือ</span>
         <strong id="balance">฿0</strong>
       </div>
       <div class="summary-card income">
@@ -659,7 +741,7 @@ body {
     <section class="toolbar">
       <div class="location-widget" id="locationWidget">
         <button class="location-select-button" id="locationSelectButton" type="button" aria-expanded="false">
-          <span id="selectedLocation">สถานที่: ทั้งหมด</span>
+          <span id="selectedLocation">บ้าน: ทั้งหมด</span>
           <span class="category-chevron">▼</span>
         </button>
         <div class="location-menu" id="locationMenu">
@@ -696,26 +778,14 @@ body {
     <section class="shelf">
       <div class="shelf-heading">
         <div>
-          <p class="eyebrow">TRANSACTIONS</p>
-          <h2>สิงหาคม 2026</h2>
+          <p class="eyebrow">HOUSE TRANSACTIONS</p>
+          <h2 id="currentPeriodTitle">รายการแยกตามบ้าน</h2>
         </div>
-        <span id="itemCount">4 รายการ</span>
+        <span id="itemCount">0 รายการ</span>
       </div>
 
-      <div class="transaction-table-wrap">
-        <table class="transaction-table">
-          <thead>
-            <tr>
-              <th>ประเภท</th>
-              <th>วันที่</th>
-              <th>รายละเอียด</th>
-              <th>จำนวนเงิน</th>
-            </tr>
-          </thead>
-          <tbody id="shelf">
-            <!-- Rows are rendered by the script at the bottom of this file -->
-          </tbody>
-        </table>
+      <div id="housesContainer" class="houses-container">
+        <!-- แต่ละบ้านจะถูกสร้างเป็นตารางแยกกันโดย JavaScript -->
       </div>
 
       <div id="loadingState" class="state-message" hidden>กำลังโหลดข้อมูล...</div>
@@ -733,24 +803,31 @@ body {
   </dialog>
 
   <script>
+function normalizeLocation(value){
+  const text=String(value??"").trim().replace(/\s+/g," ");
+  if(!text)return "";
+  const compact=text.replace(/\s/g,"");
+  if(compact==="บ้าน1")return "บ้าน 1";
+  if(compact==="บ้าน2")return "บ้าน 2";
+  return text;
+}
+
 /*
   ====== ตั้งค่าการเชื่อมต่อ ======
   แทนที่ URL ด้านล่างด้วย Web App URL ที่ได้จากการ Deploy Google Apps Script
   (Deploy > New deployment > Web app > Execute as: Me > Who has access: Anyone)
 
-  SECRET_TOKEN ต้องตรงกับค่าที่ตั้งไว้ใน Code.gs (ตัวแปร SECRET_TOKEN)
-  ใช้กันบอท/คนแปลกหน้ายิง request เข้ามาเขียนข้อมูลมั่ว ๆ — ไม่ใช่ระบบความปลอดภัยระดับสูง
-  เหมาะกับระบบใช้ในบ้าน/ทีมเล็กเท่านั้น
+  Backend ตรวจสอบรูปแบบข้อมูลและจำกัดค่าที่รับเข้าแทนการฝัง Secret ไว้ใน Frontend
 */
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1sjPJMsU24E-DNbBNWcezr7LhGLc2kLM4KOGnc9pw9CpC_PWTIIcjl0B0MWNKdUrfDw/exec";
-const SECRET_TOKEN = "ganjooo123";
 
 let transactions = [];
 let categories = [];
 let locations = [];
 
-const shelf=document.querySelector("#shelf");
+const housesContainer=document.querySelector("#housesContainer");
 const itemCount=document.querySelector("#itemCount");
+const currentPeriodTitle=document.querySelector("#currentPeriodTitle");
 const monthSelect=document.querySelector("#monthSelect");
 const daySelect=document.querySelector("#daySelect");
 const locationSelectButton=document.querySelector("#locationSelectButton");
@@ -767,7 +844,7 @@ const closeImageDialog=document.querySelector("#closeImageDialog");
 const loadingState=document.querySelector("#loadingState");
 const errorState=document.querySelector("#errorState");
 const retryButton=document.querySelector("#retryButton");
-const transactionTableWrap=document.querySelector(".transaction-table-wrap");
+
 
 const summaryValues={balance:0,income:0,expense:0,expenseCategory:"ทั้งหมด"};
 let selectedLocationValue="all";
@@ -841,7 +918,7 @@ function populateDayOptions(){
 
 function renderLocationMenu(){
   locationOptionsDynamic.innerHTML=locations.map(name=>
-    `<button class="location-option ${selectedLocationValue===name?"active":""}" type="button" data-location="${name}">${name}</button>`
+    `<button class="location-option ${selectedLocationValue===name?"active":""}" type="button" data-location="${escapeHtml(name)}">${name}</button>`
   ).join("");
 
   locationOptionsDynamic.querySelectorAll(".location-option").forEach(o=>
@@ -919,9 +996,7 @@ function calculateSummary(){
   }
 
   if(selectedDayValue !== "all"){
-    const selectedDate = parseIsoDate(
-      transactions.find(x=>dayKey(x)===selectedDayValue)?.datetime || ""
-    );
+    const selectedDate = selectedDayValue!=="all" ? parseIsoDate(selectedDayValue+"T00:00:00") : null;
 
     if(selectedDate){
       balanceData = balanceData.filter(x=>{
@@ -949,47 +1024,135 @@ function calculateSummary(){
   document.querySelector("#income").textContent=money(summaryValues.income);
   document.querySelector("#expense").textContent=money(summaryValues.expense);
   document.querySelector("#balance").textContent=money(summaryValues.balance);
+  document.querySelector("#balanceLabel").textContent=selectedLocationValue==="all"?"เงินคงเหลือรวม":`เงินคงเหลือ ${selectedLocationValue}`;
 
   document.querySelector("#expenseLabel").innerHTML=
     selectedCategoryValue==="all"
       ? "รายจ่าย"
       : `รายจ่าย <span class="summary-filter-label">(${selectedCategoryValue})</span>`;
 }
+function escapeHtml(value){
+  return String(value??"")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function houseMatches(x, house){
+  const itemLocation=normalizeLocation(x.location);
+  return house==="ยังไม่ระบุบ้าน" ? !itemLocation : itemLocation===normalizeLocation(house);
+}
+
+function getHouseSummary(house, rows){
+  const income=rows
+    .filter(x=>houseMatches(x,house) && x.type==="income")
+    .reduce((s,x)=>s+Number(x.amount||0),0);
+
+  const expense=rows
+    .filter(x=>houseMatches(x,house) && x.type==="expense")
+    .filter(x=>selectedCategoryValue==="all"||x.category===selectedCategoryValue)
+    .reduce((s,x)=>s+Number(x.amount||0),0);
+
+  // Balance never follows category; it is scoped only by house and date period.
+  let balanceData=transactions.filter(x=>houseMatches(x,house));
+  if(selectedMonthValue!=="all") balanceData=balanceData.filter(x=>monthKey(x)===selectedMonthValue);
+
+  if(selectedDayValue!=="all"){
+    const selectedDate=parseIsoDate(selectedDayValue+"T00:00:00");
+    if(selectedDate){
+      balanceData=balanceData.filter(x=>{
+        const d=parseIsoDate(x.datetime);
+        return d && monthKey(x)===selectedMonthValue && d.day<=selectedDate.day;
+      });
+    }
+  }
+
+  const balanceIncome=balanceData.filter(x=>x.type==="income")
+    .reduce((s,x)=>s+Number(x.amount||0),0);
+  const balanceExpense=balanceData.filter(x=>x.type==="expense")
+    .reduce((s,x)=>s+Number(x.amount||0),0);
+
+  return {income,expense,balance:balanceIncome-balanceExpense};
+}
+
 function render(){
-  const visible=dateFiltered()
+  const filtered=dateFiltered()
     .filter(x=>selectedCategoryValue==="all"||x.category===selectedCategoryValue)
     .sort((a,b)=>a.datetime.localeCompare(b.datetime));
-  itemCount.textContent=`${visible.length} รายการ`;
-  if(!visible.length){
-    shelf.innerHTML=`<tr class="empty-row"><td colspan="4">ไม่มีรายการตามเดือน / วันที่ / หมวดหมู่ที่เลือก</td></tr>`;
-    return;
-  }
-  shelf.innerHTML=visible.map(item=>{
-    const open=openId===item.id;
+
+  itemCount.textContent=`${filtered.length} รายการ`;
+  currentPeriodTitle.textContent=selectedMonthValue==="all" ? "รายการแยกตามบ้าน" : `รายการ ${monthLabel(selectedMonthValue)}`;
+
+  // แสดงบ้านหลักก่อน แล้วตามด้วยสถานที่เก่าที่มีข้อมูลอยู่จริง
+  const hasUnassigned=transactions.some(x=>!String(x.location||"").trim());
+  const orderedHouses=[...new Set([
+    "บ้าน 1",
+    "บ้าน 2",
+    ...locations,
+    ...(hasUnassigned?["ยังไม่ระบุบ้าน"]:[])
+  ])].filter(Boolean);
+
+  const visibleHouses=selectedLocationValue==="all"
+    ? orderedHouses
+    : orderedHouses.filter(h=>h===selectedLocationValue);
+
+  housesContainer.innerHTML=visibleHouses.map(house=>{
+    const rows=filtered.filter(x=>houseMatches(x,house));
+    const summary=getHouseSummary(house, dateFiltered());
+
+    const tableRows=rows.length ? rows.map(item=>{
+      const open=openId===item.id;
+      return `
+        <tr class="transaction-row ${open?"is-open":""}">
+          <td><span class="category-badge ${item.type==="expense" ? "expense-badge" : ""}">${item.type==="income"?"รายรับ":"รายจ่าย"}</span></td>
+          <td><span class="table-date">${formatThaiDate(item.datetime)}</span></td>
+          <td><button class="detail-button" data-id="${item.id}" type="button">${escapeHtml(item.title)} <span class="row-time">${formatThaiTime(item.datetime)}</span></button></td>
+          <td><span class="table-amount ${item.type}">${item.type==="income"?"+":"-"} ${money(item.amount)}</span></td>
+        </tr>
+        ${open?`
+        <tr class="detail-row-full"><td colspan="4"><div class="detail-panel">
+          <div class="detail-line type ${item.type==="income"?"type-income":"type-expense"}">${item.type==="income"?"รายรับ":"รายจ่าย"}</div>
+          <div class="detail-line category-detail">${escapeHtml(item.category)}</div>
+          <div class="detail-line title">${escapeHtml(item.title)}</div>
+          <div class="detail-line description">${escapeHtml(item.detail)}</div>
+          <div class="detail-line date-time">${formatThaiTime(item.datetime)} ${formatThaiDate(item.datetime)}</div>
+          <div class="detail-line">${item.image?`<button class="image-trigger" type="button" data-image-id="${item.id}">ภาพประกอบ (สลิป) — กดเพื่อดูภาพ</button>`:`<span class="no-image">ไม่มีภาพประกอบ</span>`}</div>
+        </div></td></tr>`:""}`;
+    }).join("") : `<tr><td colspan="4"><div class="house-empty">ไม่มีรายการของ${escapeHtml(house)}ตามตัวกรองที่เลือก</div></td></tr>`;
+
     return `
-      <tr class="transaction-row ${open?"is-open":""}">
-        <td><span class="category-badge ${item.type==="expense" ? "expense-badge" : ""}">${item.type==="income"?"รายรับ":"รายจ่าย"}</span></td>
-        <td><span class="table-date">${formatThaiDate(item.datetime)}</span></td>
-        <td><button class="detail-button" data-id="${item.id}" type="button">${item.title} <span class="row-time">${formatThaiTime(item.datetime)}</span></button></td>
-        <td><span class="table-amount ${item.type}">${item.type==="income"?"+":"-"} ${money(item.amount)}</span></td>
-      </tr>
-      ${open?`
-      <tr class="detail-row-full"><td colspan="4"><div class="detail-panel">
-        <div class="detail-line type ${item.type==="income"?"type-income":"type-expense"}">${item.type==="income"?"รายรับ":"รายจ่าย"}</div>
-        <div class="detail-line category-detail">${item.category}</div>
-        <div class="detail-line title">${item.title}</div>
-        <div class="detail-line description">${item.detail}</div>
-        <div class="detail-line date-time">${formatThaiTime(item.datetime)} ${formatThaiDate(item.datetime)}</div>
-        <div class="detail-line">${item.image?`<button class="image-trigger" type="button" data-image-id="${item.id}">ภาพประกอบ (สลิป) — กดเพื่อดูภาพ</button>`:`<span class="no-image">ไม่มีภาพประกอบ</span>`}</div>
-      </div></td></tr>`:""}`;
+      <section class="house-panel" data-house="${escapeHtml(house)}">
+        <div class="house-panel-header">
+          <h3 class="house-panel-title">${escapeHtml(house)}</h3>
+          <p class="house-panel-subtitle">คำนวณรายรับ รายจ่าย และเงินคงเหลือแยกจากบ้านอื่น</p>
+        </div>
+        <div class="house-summary">
+          <div class="house-summary-card balance"><span>เงินคงเหลือ</span><strong>${money(summary.balance)}</strong></div>
+          <div class="house-summary-card income"><span>รายรับ</span><strong>${money(summary.income)}</strong></div>
+          <div class="house-summary-card expense"><span>รายจ่าย${selectedCategoryValue!=="all"?` (${escapeHtml(selectedCategoryValue)})`:""}</span><strong>${money(summary.expense)}</strong></div>
+        </div>
+        <div class="house-table-wrap transaction-table-wrap">
+          <table class="transaction-table">
+            <thead><tr><th>ประเภท</th><th>วันที่</th><th>รายละเอียด</th><th>จำนวนเงิน</th></tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
+      </section>`;
   }).join("");
 
-  shelf.querySelectorAll(".detail-button").forEach(b=>b.addEventListener("click",()=>{
+  housesContainer.querySelectorAll(".detail-button").forEach(b=>b.addEventListener("click",()=>{
     const id=Number(b.dataset.id); openId=openId===id?null:id; render();
   }));
-  shelf.querySelectorAll(".image-trigger").forEach(b=>b.addEventListener("click",e=>{
-    e.stopPropagation(); const item=transactions.find(x=>x.id===Number(b.dataset.imageId));
-    if(!item?.image)return; previewImage.src=toEmbeddableDriveUrl(item.image); previewImage.alt=`ภาพประกอบ: ${item.title}`; imageDialog.showModal();
+
+  housesContainer.querySelectorAll(".image-trigger").forEach(b=>b.addEventListener("click",e=>{
+    e.stopPropagation();
+    const item=transactions.find(x=>x.id===Number(b.dataset.imageId));
+    if(!item?.image)return;
+    previewImage.src=toEmbeddableDriveUrl(item.image);
+    previewImage.alt=`ภาพประกอบ: ${item.title}`;
+    imageDialog.showModal();
   }));
 }
 function toEmbeddableDriveUrl(url){
@@ -1003,7 +1166,7 @@ function refresh(){calculateSummary();render();}
 function selectLocation(v){
   selectedLocationValue=v;
   openId=null;
-  selectedLocation.textContent=v==="all"?"สถานที่: ทั้งหมด":`สถานที่: ${v}`;
+  selectedLocation.textContent=v==="all"?"บ้าน: ทั้งหมด":`บ้าน: ${v}`;
   renderLocationMenu();
   locationMenu.classList.remove("open");
   locationSelectButton.setAttribute("aria-expanded","false");
@@ -1067,17 +1230,17 @@ async function postToBackend(payload){
 function showLoading(){
   loadingState.hidden=false;
   errorState.hidden=true;
-  transactionTableWrap.style.display="none";
+  housesContainer.style.display="none";
 }
 function showError(){
   loadingState.hidden=true;
   errorState.hidden=false;
-  transactionTableWrap.style.display="none";
+  housesContainer.style.display="none";
 }
 function showData(){
   loadingState.hidden=true;
   errorState.hidden=true;
-  transactionTableWrap.style.display="";
+  housesContainer.style.display="";
 }
 
 async function loadData(){
@@ -1090,7 +1253,7 @@ async function loadData(){
     transactions=(data.transactions||[]).map(t=>({
       id:Number(t.id),
       datetime:t.datetime,
-      location:t.location||"",
+      location:normalizeLocation(t.location),
       type:t.type,
       category:t.category||"",
       title:t.title,
@@ -1099,9 +1262,16 @@ async function loadData(){
       image:t.imageUrl||""
     }));
     categories=data.categories||[];
-    locations=[...new Set(
-      transactions.map(t=>String(t.location||"").trim()).filter(Boolean)
-    )].sort((a,b)=>a.localeCompare(b,"th"));
+    locations=[...new Set([
+      "บ้าน 1",
+      "บ้าน 2",
+      ...(data.locations||[]),
+      ...transactions.map(t=>String(t.location||"").trim()).filter(Boolean)
+    ])].filter(Boolean).sort((a,b)=>{
+      const order={"บ้าน 1":0,"บ้าน 2":1};
+      if(a in order || b in order) return (order[a]??999)-(order[b]??999);
+      return a.localeCompare(b,"th");
+    });
 
     renderLocationMenu();
     renderCategoryMenu();

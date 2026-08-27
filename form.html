@@ -284,14 +284,11 @@ select#category:disabled {
       </div>
 
       <div class="field">
-        <label for="location">สถานที่</label>
-        <input type="text" id="location" name="location" list="locationSuggestions" placeholder="เช่น บ้าน, ร้าน, ที่ 2">
-        <datalist id="locationSuggestions">
-          <option value="บ้าน">
-          <option value="ร้าน">
-          <option value="ที่ 2">
-        </datalist>
-        <div class="field-error" id="locationError">กรุณากรอกสถานที่</div>
+        <label for="location">บ้าน</label>
+        <select id="location" name="location">
+          <option value="">กำลังโหลดรายชื่อบ้าน...</option>
+        </select>
+        <div class="field-error" id="locationError">กรุณาเลือกบ้าน</div>
       </div>
 
       <div class="field" id="categoryField">
@@ -362,12 +359,20 @@ select#category:disabled {
   </main>
 
   <script>
+function normalizeLocation(value){
+  const text=String(value??"").trim().replace(/\s+/g," ");
+  if(!text)return "";
+  const compact=text.replace(/\s/g,"");
+  if(compact==="บ้าน1")return "บ้าน 1";
+  if(compact==="บ้าน2")return "บ้าน 2";
+  return text;
+}
+
 /*
   ====== ตั้งค่าการเชื่อมต่อ ======
-  ต้องตรงกับค่าที่ตั้งไว้ใน index.html และ Code.gs
+  โหลดข้อมูลและส่งรายการผ่าน Google Apps Script Web App
 */
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1sjPJMsU24E-DNbBNWcezr7LhGLc2kLM4KOGnc9pw9CpC_PWTIIcjl0B0MWNKdUrfDw/exec";
-const SECRET_TOKEN = "ganjooo123";
 
 const form=document.querySelector("#entryForm");
 const categorySelect=document.querySelector("#category");
@@ -433,17 +438,26 @@ function setDefaultDateTime(){
 setDefaultDateTime();
 
 // โหลดหมวดหมู่จาก Data source เดียวกับหน้ารายการ เพื่อให้ตรงกันเสมอ
-async function loadCategories(){
+async function loadDataSource(){
   try{
     const res=await fetch(APPS_SCRIPT_URL);
     const data=await res.json();
+
     const categories=data.categories||[];
-    categorySelect.innerHTML=categories.map(c=>`<option value="${c}">${c}</option>`).join("");
+    categorySelect.innerHTML=categories.length
+      ? categories.map(c=>`<option value="${c}">${c}</option>`).join("")
+      : `<option value="">ยังไม่มีหมวดหมู่</option>`;
+
+    const locations=[...new Set(["บ้าน 1","บ้าน 2",...(data.locations||[])].filter(Boolean))];
+    locationInput.innerHTML=`<option value="">เลือกบ้าน</option>` +
+      locations.map(name=>`<option value="${String(name).replace(/"/g,"&quot;")}">${String(name).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</option>`).join("");
+    if(locations.includes("บ้าน 1")) locationInput.value="บ้าน 1";
   }catch(err){
     categorySelect.innerHTML=`<option value="">โหลดหมวดหมู่ไม่สำเร็จ</option>`;
+    locationInput.innerHTML=`<option value="">โหลดรายชื่อบ้านไม่สำเร็จ</option>`;
   }
 }
-loadCategories();
+loadDataSource();
 
 // หมวดหมู่ใช้เฉพาะรายจ่าย (ตาม spec: รายรับไม่แยกตามหมวดหมู่)
 function updateCategoryVisibility(){
@@ -528,10 +542,9 @@ form.addEventListener("submit",async(e)=>{
   const isIncome=document.querySelector('input[name="type"]:checked').value==="income";
   const payload={
     action:"addTransaction",
-    token:SECRET_TOKEN,
     type:isIncome?"income":"expense",
     category:isIncome?"":categorySelect.value,
-    location:locationInput.value.trim(),
+    location:normalizeLocation(locationInput.value),
     title:titleInput.value.trim(),
     detail:detailInput.value.trim(),
     amount:Number(amountInput.value),
