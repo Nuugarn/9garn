@@ -725,7 +725,7 @@ body {
 
     <section class="summary">
       <div class="balance-card">
-        <span class="summary-label" id="balanceLabel">เงินคงเหลือ</span>
+        <span class="summary-label">เงินคงเหลือ</span>
         <strong id="balance">฿0</strong>
       </div>
       <div class="summary-card income">
@@ -803,15 +803,6 @@ body {
   </dialog>
 
   <script>
-function normalizeLocation(value){
-  const text=String(value??"").trim().replace(/\s+/g," ");
-  if(!text)return "";
-  const compact=text.replace(/\s/g,"");
-  if(compact==="บ้าน1")return "บ้าน 1";
-  if(compact==="บ้าน2")return "บ้าน 2";
-  return text;
-}
-
 /*
   ====== ตั้งค่าการเชื่อมต่อ ======
   แทนที่ URL ด้านล่างด้วย Web App URL ที่ได้จากการ Deploy Google Apps Script
@@ -904,7 +895,7 @@ function populateMonthOptions(){
 }
 function populateDayOptions(){
   const rows=transactions
-    .filter(x=>selectedLocationValue==="all"||x.location===selectedLocationValue)
+    .filter(x=>selectedLocationValue==="all"||houseMatches(x,selectedLocationValue))
     .filter(x=>selectedMonthValue==="all"||monthKey(x)===selectedMonthValue)
     .map(x=>({key:dayKey(x),date:parseIsoDate(x.datetime)}))
     .filter(x=>x.date)
@@ -918,7 +909,7 @@ function populateDayOptions(){
 
 function renderLocationMenu(){
   locationOptionsDynamic.innerHTML=locations.map(name=>
-    `<button class="location-option ${selectedLocationValue===name?"active":""}" type="button" data-location="${escapeHtml(name)}">${name}</button>`
+    `<button class="location-option ${selectedLocationValue===name?"active":""}" type="button" data-location="${name}">${name}</button>`
   ).join("");
 
   locationOptionsDynamic.querySelectorAll(".location-option").forEach(o=>
@@ -944,7 +935,7 @@ function renderCategoryMenu(){
 
 function dateFiltered(){
   return transactions.filter(x=>{
-    const loc=selectedLocationValue==="all"||x.location===selectedLocationValue;
+    const loc=selectedLocationValue==="all"||houseMatches(x,selectedLocationValue);
     const mm=selectedMonthValue==="all"||monthKey(x)===selectedMonthValue;
     const dd=selectedDayValue==="all"||dayKey(x)===selectedDayValue;
     return loc&&mm&&dd;
@@ -988,7 +979,7 @@ function calculateSummary(){
   // เงินคงเหลือใช้ขอบเขตสถานที่ + เดือน/วันที่
   // แต่ไม่สนหมวดหมู่ เพื่อรักษากฎเดิมของระบบ
   let balanceData = transactions.filter(x=>
-    selectedLocationValue==="all" || x.location===selectedLocationValue
+    selectedLocationValue==="all" || houseMatches(x,selectedLocationValue)
   );
 
   if(selectedMonthValue !== "all"){
@@ -996,7 +987,9 @@ function calculateSummary(){
   }
 
   if(selectedDayValue !== "all"){
-    const selectedDate = selectedDayValue!=="all" ? parseIsoDate(selectedDayValue+"T00:00:00") : null;
+    const selectedDate = parseIsoDate(
+      transactions.find(x=>dayKey(x)===selectedDayValue)?.datetime || ""
+    );
 
     if(selectedDate){
       balanceData = balanceData.filter(x=>{
@@ -1024,7 +1017,6 @@ function calculateSummary(){
   document.querySelector("#income").textContent=money(summaryValues.income);
   document.querySelector("#expense").textContent=money(summaryValues.expense);
   document.querySelector("#balance").textContent=money(summaryValues.balance);
-  document.querySelector("#balanceLabel").textContent=selectedLocationValue==="all"?"เงินคงเหลือรวม":`เงินคงเหลือ ${selectedLocationValue}`;
 
   document.querySelector("#expenseLabel").innerHTML=
     selectedCategoryValue==="all"
@@ -1041,8 +1033,7 @@ function escapeHtml(value){
 }
 
 function houseMatches(x, house){
-  const itemLocation=normalizeLocation(x.location);
-  return house==="ยังไม่ระบุบ้าน" ? !itemLocation : itemLocation===normalizeLocation(house);
+  return house==="ยังไม่ระบุบ้าน" ? !String(x.location||"").trim() : x.location===house;
 }
 
 function getHouseSummary(house, rows){
@@ -1055,12 +1046,13 @@ function getHouseSummary(house, rows){
     .filter(x=>selectedCategoryValue==="all"||x.category===selectedCategoryValue)
     .reduce((s,x)=>s+Number(x.amount||0),0);
 
-  // Balance never follows category; it is scoped only by house and date period.
+  // Balance ไม่สนหมวดหมู่ แต่สนบ้าน + เดือน/วันที่ ตามกฎเดิม
   let balanceData=transactions.filter(x=>houseMatches(x,house));
   if(selectedMonthValue!=="all") balanceData=balanceData.filter(x=>monthKey(x)===selectedMonthValue);
-
   if(selectedDayValue!=="all"){
-    const selectedDate=parseIsoDate(selectedDayValue+"T00:00:00");
+    const selectedDate=parseIsoDate(
+      transactions.find(x=>dayKey(x)===selectedDayValue)?.datetime||""
+    );
     if(selectedDate){
       balanceData=balanceData.filter(x=>{
         const d=parseIsoDate(x.datetime);
@@ -1069,9 +1061,11 @@ function getHouseSummary(house, rows){
     }
   }
 
-  const balanceIncome=balanceData.filter(x=>x.type==="income")
+  const balanceIncome=balanceData
+    .filter(x=>x.type==="income")
     .reduce((s,x)=>s+Number(x.amount||0),0);
-  const balanceExpense=balanceData.filter(x=>x.type==="expense")
+  const balanceExpense=balanceData
+    .filter(x=>x.type==="expense")
     .reduce((s,x)=>s+Number(x.amount||0),0);
 
   return {income,expense,balance:balanceIncome-balanceExpense};
@@ -1253,7 +1247,7 @@ async function loadData(){
     transactions=(data.transactions||[]).map(t=>({
       id:Number(t.id),
       datetime:t.datetime,
-      location:normalizeLocation(t.location),
+      location:t.location||"",
       type:t.type,
       category:t.category||"",
       title:t.title,
@@ -1262,6 +1256,7 @@ async function loadData(){
       image:t.imageUrl||""
     }));
     categories=data.categories||[];
+    const hasUnassignedData=transactions.some(t=>!String(t.location||"").trim());
     locations=[...new Set([
       "บ้าน 1",
       "บ้าน 2",
@@ -1272,6 +1267,8 @@ async function loadData(){
       if(a in order || b in order) return (order[a]??999)-(order[b]??999);
       return a.localeCompare(b,"th");
     });
+    // รายการเก่าที่ยังไม่ระบุบ้านต้องกรองดูได้เช่นกัน ไม่ใช่แค่แสดงเป็นกลุ่มเฉย ๆ
+    if(hasUnassignedData) locations.push("ยังไม่ระบุบ้าน");
 
     renderLocationMenu();
     renderCategoryMenu();
