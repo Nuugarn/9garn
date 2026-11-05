@@ -624,6 +624,7 @@ body {
   font-size: 24px;
   color: #0b1f3a;
 }
+.rename-house { border: 1px solid #b8cadb; border-radius: 8px; background: white; color: #315f8c; padding: 5px 10px; cursor: pointer; }
 
 .house-panel-subtitle {
   margin: 0;
@@ -909,7 +910,7 @@ function populateDayOptions(){
 
 function renderLocationMenu(){
   locationOptionsDynamic.innerHTML=locations.map(name=>
-    `<button class="location-option ${selectedLocationValue===name?"active":""}" type="button" data-location="${name}">${name}</button>`
+    `<button class="location-option ${selectedLocationValue===name?"active":""}" type="button" data-location="${escapeHtml(name)}">${escapeHtml(name)}</button>`
   ).join("");
 
   locationOptionsDynamic.querySelectorAll(".location-option").forEach(o=>
@@ -1082,8 +1083,6 @@ function render(){
   // แสดงบ้านหลักก่อน แล้วตามด้วยสถานที่เก่าที่มีข้อมูลอยู่จริง
   const hasUnassigned=transactions.some(x=>!String(x.location||"").trim());
   const orderedHouses=[...new Set([
-    "บ้าน 1",
-    "บ้าน 2",
     ...locations,
     ...(hasUnassigned?["ยังไม่ระบุบ้าน"]:[])
   ])].filter(Boolean);
@@ -1120,6 +1119,7 @@ function render(){
       <section class="house-panel" data-house="${escapeHtml(house)}">
         <div class="house-panel-header">
           <h3 class="house-panel-title">${escapeHtml(house)}</h3>
+          ${house!=="ยังไม่ระบุบ้าน"?`<button class="rename-house" type="button" data-house="${escapeHtml(house)}">เปลี่ยนชื่อบ้าน</button>`:""}
           <p class="house-panel-subtitle">คำนวณรายรับ รายจ่าย และเงินคงเหลือแยกจากบ้านอื่น</p>
         </div>
         <div class="house-summary">
@@ -1135,6 +1135,24 @@ function render(){
         </div>
       </section>`;
   }).join("");
+
+  housesContainer.querySelectorAll(".rename-house").forEach(button=>button.addEventListener("click",async()=>{
+    const oldName=button.dataset.house;
+    const input=prompt("ชื่อใหม่ของ " + oldName,oldName);
+    if(input===null) return;
+    const newName=input.trim();
+    if(!newName || newName==="ยังไม่ระบุบ้าน" || newName.toLowerCase()==="all" || /^[=+@\-]/.test(newName) || newName.length>100) { alert("กรุณาใส่ชื่อบ้านที่ถูกต้อง"); return; }
+    if(newName===oldName) return;
+    if(locations.some(name=>name.toLocaleLowerCase()===newName.toLocaleLowerCase())) { alert("มีชื่อบ้านนี้อยู่แล้ว"); return; }
+    button.disabled=true;
+    try {
+      const result=await postToBackend({action:"renameLocation",oldName,newName});
+      if(!result.ok) throw new Error(result.error||"เปลี่ยนชื่อไม่สำเร็จ");
+      if(selectedLocationValue===oldName) selectedLocationValue=newName;
+      await loadData();
+      selectLocation(selectedLocationValue);
+    } catch(err) { alert("เปลี่ยนชื่อบ้านไม่สำเร็จ: "+err.message); button.disabled=false; }
+  }));
 
   housesContainer.querySelectorAll(".detail-button").forEach(b=>b.addEventListener("click",()=>{
     const id=Number(b.dataset.id); openId=openId===id?null:id; render();
@@ -1258,8 +1276,6 @@ async function loadData(){
     categories=data.categories||[];
     const hasUnassignedData=transactions.some(t=>!String(t.location||"").trim());
     locations=[...new Set([
-      "บ้าน 1",
-      "บ้าน 2",
       ...(data.locations||[]),
       ...transactions.map(t=>String(t.location||"").trim()).filter(Boolean)
     ])].filter(Boolean).sort((a,b)=>{
