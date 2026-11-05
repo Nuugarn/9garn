@@ -439,10 +439,9 @@ async function loadDataSource(){
       ? categories.map(c=>`<option value="${c}">${c}</option>`).join("")
       : `<option value="">ยังไม่มีหมวดหมู่</option>`;
 
-    const locations=[...new Set(["บ้าน 1","บ้าน 2",...(data.locations||[])].filter(Boolean))];
-    locationInput.innerHTML=`<option value="">เลือกบ้าน</option>` +
-      locations.map(name=>`<option value="${name}">${name}</option>`).join("");
-    if(locations.includes("บ้าน 1")) locationInput.value="บ้าน 1";
+    const locations=[...new Set((data.locations||[]).filter(Boolean))];
+    locationInput.replaceChildren(new Option("เลือกบ้าน", ""), ...locations.map(name=>new Option(name, name)));
+    if(locations.length) locationInput.value=locations[0];
   }catch(err){
     categorySelect.innerHTML=`<option value="">โหลดหมวดหมู่ไม่สำเร็จ</option>`;
     locationInput.innerHTML=`<option value="">โหลดรายชื่อบ้านไม่สำเร็จ</option>`;
